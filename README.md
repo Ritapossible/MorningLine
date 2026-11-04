@@ -22,7 +22,8 @@ Built for Vibestarter's Vibeathon 02 (build window 2-9 Nov 2026).
 | Part | State |
 |---|---|
 | `MorningLine.sol` escrow + `LineToken.sol` fuel | written, 24 tests passing (unit, fuzz, stateful invariants) |
-| Checker worker | planned, see [docs/PLAN.md](docs/PLAN.md) |
+| Deploy script, Base networks, `DemoUSDC` faucet | written, green in CI, not yet run against a network |
+| Checker worker | written, 33 unit tests passing; not yet run against a live deployment |
 | Web app | planned |
 | Base deployment | planned |
 
@@ -57,8 +58,9 @@ Full trust and threat model: [docs/SECURITY.md](docs/SECURITY.md).
 ## Repo layout
 
 ```
-contracts/   Solidity (Hardhat 3): MorningLine.sol, LineToken.sol, tests
-checker/     (planned) daily GitHub check -> report() on Base
+contracts/   Solidity (Hardhat 3): MorningLine.sol, LineToken.sol, DemoUSDC.sol, tests
+             scripts/deploy.ts deploys production and demo settings
+checker/     daily GitHub check -> report() on Base
 web/         (planned) open a deal, public deal pages
 docs/        PLAN, ARCHITECTURE, SECURITY, DECISIONS
 ```
@@ -69,6 +71,15 @@ docs/        PLAN, ARCHITECTURE, SECURITY, DECISIONS
 cd contracts
 npm ci
 npm test        # hardhat test solidity: unit, fuzz and invariant tests
+```
+
+Hardhat 3 needs Node 22.13 or later.
+
+```bash
+cd checker
+npm ci
+npm run typecheck
+npm test        # matching, scheduling and decision tests, no network needed
 ```
 
 ## License

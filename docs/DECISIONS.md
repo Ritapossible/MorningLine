@@ -55,3 +55,11 @@ from npm and runs Foundry-style Solidity tests (forge-std, fuzzing, invariants) 
 ### D12 - A separate demo deployment with 180-second days (2026-11-03)
 **Why:** the demo must show present, missing and reclaim in a minute. `dayLength` is immutable,
 so the demo is its own deployment, labelled "demo" everywhere in the UI.
+
+### D13 - A faucet USDC for every deployment except mainnet (2026-11-04)
+**Why:** the definition of done is that a stranger can open a deal from the live URL. On Base
+Sepolia that needs test USDC, and Circle's faucet is an external, rate-limited dependency sitting
+in the middle of the demo path. `DemoUSDC` is a 6-decimal ERC20 with a daily drip and no owner,
+the same shape as the LINE faucet. Mainnet uses real USDC and never sees this contract.
+**Cost:** one more contract to deploy and verify, and a deal on Sepolia is denominated in a token
+that is worth nothing. The UI labels it.
