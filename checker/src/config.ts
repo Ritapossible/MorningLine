@@ -10,6 +10,7 @@ export type Config = {
   checkSeed: `0x${string}`;
   pollIntervalMs: number;
   healthPort: number;
+  logChunkBlocks: bigint;
 };
 
 function required(name: string): string {
@@ -45,6 +46,7 @@ export function loadConfig(): Config {
     checkSeed: seed,
     pollIntervalMs: Number(process.env.POLL_INTERVAL_MS ?? "600000"),
     healthPort: Number(process.env.HEALTH_PORT ?? "8080"),
+    logChunkBlocks: BigInt(process.env.LOG_CHUNK_BLOCKS ?? "200"),
   };
 }
 
@@ -54,6 +56,7 @@ export function describe(c: Config): string {
     `contract ${c.morningLineAddress}`,
     `fromBlock ${c.startBlock}`,
     `every ${c.pollIntervalMs}ms`,
+    `logs ${c.logChunkBlocks} blocks per request`,
     `github ${c.githubToken === undefined ? "anonymous" : "token"}`,
   ].join("  ");
 }

@@ -100,7 +100,11 @@ window is open, decide present or missing and call `report`.
 
 ### Configuration (environment only, never committed)
 `RPC_URL`, `CHECKER_PRIVATE_KEY`, `GITHUB_TOKEN`, `MORNINGLINE_ADDRESS`, `CHECK_SEED`,
-`START_BLOCK`. GitHub token: read-only public access is enough (5,000 requests per hour).
+`START_BLOCK`, `LOG_CHUNK_BLOCKS`. GitHub token: read-only public access is enough (5,000
+requests per hour). Public RPC endpoints cap `eth_getLogs` ranges, and Base's public Sepolia
+endpoint answers 413 above 200 blocks, so `LOG_CHUNK_BLOCKS` defaults to 200. The block cursor
+lives in the process: each loop reads only new blocks, and a restart rescans from `START_BLOCK`
+to reach the same state.
 
 ## 3. Web app: `web/` (planned)
 

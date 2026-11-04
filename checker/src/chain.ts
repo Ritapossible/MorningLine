@@ -4,8 +4,9 @@ import { decodeEventLog, getAddress } from "viem";
 import { DayStatus, morningLineAbi } from "./abi.ts";
 import type { Spec } from "./check.ts";
 
-/// Some RPC providers cap eth_getLogs ranges; stay well under the common 10k limit.
-const LOG_CHUNK = 9_000n;
+/// Public RPC endpoints cap eth_getLogs hard: Base's public Sepolia endpoint allows a 200 block
+/// range and answers 413 above it. Default inside that; a paid endpoint can raise it.
+export const DEFAULT_LOG_CHUNK = 200n;
 
 export type Deal = {
   dealId: bigint;
@@ -16,26 +17,38 @@ export type Deal = {
   settled: Set<number>;
 };
 
-/// Replay the log history into the current set of deals and which of their days are done.
-export async function loadDeals(
+/// Accumulated deal state plus how far the log scan has got.
+export type Scanner = { deals: Map<string, Deal>; cursor: bigint; chunk: bigint };
+
+export function newScanner(startBlock: bigint, chunk: bigint = DEFAULT_LOG_CHUNK): Scanner {
+  return { deals: new Map(), cursor: startBlock, chunk };
+}
+
+/// Read the logs between the cursor and `toBlock`, folding them into the deal set.
+///
+/// Only new blocks are read, so a long-lived process does not replay the whole history every
+/// loop. The cursor advances one chunk at a time and only after that chunk succeeded, so a
+/// failed request is simply retried next loop with nothing skipped. A restart rescans from
+/// START_BLOCK and reaches the same state, it just costs more requests once.
+export async function scan(
+  s: Scanner,
   client: PublicClient,
   address: Address,
-  fromBlock: bigint,
   toBlock: bigint,
 ): Promise<Map<string, Deal>> {
-  const deals = new Map<string, Deal>();
-
-  for (let start = fromBlock; start <= toBlock; start += LOG_CHUNK) {
-    const end = start + LOG_CHUNK - 1n > toBlock ? toBlock : start + LOG_CHUNK - 1n;
-    const logs = await client.getLogs({ address, fromBlock: start, toBlock: end });
+  while (s.cursor <= toBlock) {
+    const last = s.cursor + s.chunk - 1n;
+    const end = last > toBlock ? toBlock : last;
+    const logs = await client.getLogs({ address, fromBlock: s.cursor, toBlock: end });
 
     for (const log of logs) {
       const parsed = tryDecode(log);
       if (parsed === null) continue;
-      apply(deals, parsed);
+      apply(s.deals, parsed);
     }
+    s.cursor = end + 1n;
   }
-  return deals;
+  return s.deals;
 }
 
 type Decoded =

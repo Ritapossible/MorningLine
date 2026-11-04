@@ -16,7 +16,7 @@ is the only thing that sinks the entry; an imperfect feature does not.
 |---|---|---|
 | Tue 3 | Repo, docs, `MorningLine.sol`, `LineToken.sol`, 24 tests (unit, fuzz, invariants), mutation check | done |
 | Wed 4 | Deploy script; Base Sepolia deployment (production settings + demo settings); CI | done; Basescan verification still needs an Etherscan API key |
-| Thu 5 | Checker: log scan, GitHub read, matching, report; runs against our own repo on Sepolia | written, 33 unit tests green; the live run waits on the deployment |
+| Thu 5 | Checker: log scan, GitHub read, matching, report; runs against our own repo on Sepolia | done; ran against this repo on the demo deployment and settled all three outcomes |
 | Fri 6 | Web app: `/new`, `/deal/[id]`, faucet, "check now" | |
 | Sat 7 | Base mainnet deployment, $1 deals, live URL, checker hosted | |
 | Sun 8 | Demo video, README polish, submit early | |

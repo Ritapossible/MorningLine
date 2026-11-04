@@ -9,7 +9,8 @@ import { privateKeyToAccount } from "viem/accounts";
 import { base, baseSepolia } from "viem/chains";
 import { createServer } from "node:http";
 import { morningLineAbi } from "./abi.ts";
-import { isStillOpen, loadDeals, openDays, sendReport } from "./chain.ts";
+import { isStillOpen, newScanner, openDays, scan, sendReport } from "./chain.ts";
+import type { Scanner } from "./chain.ts";
 import { decide } from "./check.ts";
 import { describe, loadConfig } from "./config.ts";
 import { LookupFailed } from "./github.ts";
@@ -44,10 +45,13 @@ async function loop(config: ReturnType<typeof loadConfig>): Promise<void> {
   console.log(describe(config));
   console.log(`dayLength ${dayLength}s  reportGrace ${reportGrace}s`);
 
+  // Created once: the cursor survives between loops so only new blocks are read.
+  const scanner = newScanner(config.startBlock, config.logChunkBlocks);
+
   for (;;) {
     health.lastRunAt = new Date().toISOString();
     try {
-      await runOnce(client, wallet, address, account.address, config, dayLength, reportGrace);
+      await runOnce(client, wallet, address, account.address, config, scanner, dayLength, reportGrace);
       health.lastSuccessAt = new Date().toISOString();
       health.lastError = null;
     } catch (err) {
@@ -64,12 +68,13 @@ async function runOnce(
   address: `0x${string}`,
   checker: `0x${string}`,
   config: ReturnType<typeof loadConfig>,
+  scanner: Scanner,
   dayLength: bigint,
   reportGrace: bigint,
 ): Promise<void> {
   const block = await client.getBlock();
   const now = block.timestamp;
-  const deals = await loadDeals(client, address, config.startBlock, block.number);
+  const deals = await scan(scanner, client, address, block.number);
 
   const mine = [...deals.values()].filter((d) => d.checker === getAddress(checker));
 

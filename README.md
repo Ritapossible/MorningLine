@@ -23,7 +23,7 @@ Built for Vibestarter's Vibeathon 02 (build window 2-9 Nov 2026).
 |---|---|
 | `MorningLine.sol` escrow + `LineToken.sol` fuel | written, 24 tests passing (unit, fuzz, stateful invariants) |
 | Deploy script, Base networks, `DemoUSDC` faucet | written, green in CI |
-| Checker worker | written, 33 unit tests passing; not yet run against a live deployment |
+| Checker worker | 42 unit tests passing, and confirmed end to end on Base Sepolia: present paid, missing refunded, silence reclaimed |
 | Web app | planned |
 | Base Sepolia deployment | live, see below; not yet verified on Basescan |
 | Base mainnet deployment | planned |
