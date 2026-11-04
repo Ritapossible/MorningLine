@@ -1,0 +1,490 @@
+/* Morning Line.
+   The product pays for a line that survived the night and is still there at dawn, so the
+   surface is night and the accent is the first warm light on it. Amber means the line held
+   and the maintainer was paid; cool blue means it was gone and the money went back; violet
+   means nobody looked and the day lapsed. Those three colours carry the whole product. */
+
+:root {
+  --paper: #fdfaf5;
+  --surface: #ffffff;
+  --raised: #f7f2ea;
+  --border: #e7ded0;
+  --border-strong: #d6c9b4;
+  --ink: #15192a;
+  --muted: #6a7187;
+
+  --dawn: #c2701a;
+  --dawn-ink: #ffffff;
+  --dawn-wash: #fdf0df;
+
+  --dusk: #3f62a8;
+  --dusk-wash: #e8eefb;
+
+  --lapse: #6f5c9c;
+  --lapse-wash: #efeaf9;
+
+  --danger: #b4342a;
+
+  --radius: 10px;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Inter, Roboto, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme=light]) {
+    --paper: #080b14;
+    --surface: #0e1320;
+    --raised: #151b2c;
+    --border: #1f2740;
+    --border-strong: #2d3754;
+    --ink: #e9ecf4;
+    --muted: #8e98b0;
+
+    --dawn: #f4a259;
+    --dawn-ink: #231404;
+    --dawn-wash: #2a1d0e;
+
+    --dusk: #6f8fd6;
+    --dusk-wash: #131c30;
+
+    --lapse: #9b87c4;
+    --lapse-wash: #1d1830;
+
+    --danger: #e4685d;
+  }
+}
+
+:root[data-theme=dark] {
+  --paper: #080b14;
+  --surface: #0e1320;
+  --raised: #151b2c;
+  --border: #1f2740;
+  --border-strong: #2d3754;
+  --ink: #e9ecf4;
+  --muted: #8e98b0;
+  --dawn: #f4a259;
+  --dawn-ink: #231404;
+  --dawn-wash: #2a1d0e;
+  --dusk: #6f8fd6;
+  --dusk-wash: #131c30;
+  --lapse: #9b87c4;
+  --lapse-wash: #1d1830;
+  --danger: #e4685d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+}
+
+.wrap {
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* ---------------------------------------------------------------- masthead */
+
+.masthead {
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.masthead-in {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 60px;
+  flex-wrap: wrap;
+}
+
+.wordmark {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  text-decoration: none;
+  font-size: 16px;
+}
+
+.wordmark .sun {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--dawn);
+  box-shadow: 0 0 0 3px var(--dawn-wash);
+  flex: none;
+}
+
+.masthead nav {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-size: 14px;
+}
+
+.masthead nav a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.masthead nav a:hover {
+  color: var(--ink);
+}
+
+/* ------------------------------------------------------------------ pieces */
+
+.net-badge {
+  font: 500 11px/1 var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 5px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.net-badge.demo {
+  color: var(--dawn);
+  border-color: var(--dawn);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+h1 {
+  font-size: 30px;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  margin: 0 0 12px;
+  font-weight: 660;
+}
+
+h2 {
+  font-size: 18px;
+  letter-spacing: -0.01em;
+  margin: 0 0 10px;
+  font-weight: 620;
+}
+
+h3 {
+  font-size: 13px;
+  margin: 0 0 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+p {
+  margin: 0 0 12px;
+}
+
+.lede {
+  font-size: 17px;
+  color: var(--muted);
+  max-width: 60ch;
+}
+
+.small {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+code,
+.mono {
+  font-family: var(--mono);
+  font-size: 0.9em;
+}
+
+.field {
+  display: block;
+  margin-bottom: 14px;
+}
+
+.field > span {
+  display: block;
+  font-size: 13px;
+  font-weight: 550;
+  margin-bottom: 5px;
+}
+
+.field .hint {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+input[type=text],
+input[type=number],
+select,
+textarea {
+  width: 100%;
+  padding: 9px 11px;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid var(--dawn);
+  outline-offset: -1px;
+  border-color: var(--dawn);
+}
+
+button {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 550;
+  padding: 9px 15px;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--raised);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  border-color: var(--muted);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+button.primary {
+  background: var(--dawn);
+  border-color: var(--dawn);
+  color: var(--dawn-ink);
+}
+
+button.primary:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 620px) {
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.notice {
+  border-left: 2px solid var(--border-strong);
+  padding: 2px 0 2px 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.notice.warn {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.notice.good {
+  border-color: var(--dawn);
+  color: var(--ink);
+}
+
+/* ---------------------------------------------------------------- day strip */
+
+.strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 4px 0 2px;
+}
+
+.day {
+  width: 34px;
+  height: 40px;
+  border-radius: 6px;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 600 11px/1 var(--mono);
+  color: var(--muted);
+  text-decoration: none;
+  padding: 0;
+}
+
+.day.paid {
+  background: var(--dawn);
+  border-color: var(--dawn);
+  color: var(--dawn-ink);
+}
+
+.day.refunded {
+  background: var(--dusk-wash);
+  border-color: var(--dusk);
+  color: var(--dusk);
+}
+
+.day.reclaimed {
+  background: var(--lapse-wash);
+  border-color: var(--lapse);
+  color: var(--lapse);
+}
+
+.day.waiting {
+  border-style: dashed;
+}
+
+.day.due {
+  border-style: dashed;
+  border-color: var(--dawn);
+  color: var(--dawn);
+}
+
+a.day:hover {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+.legend {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.legend i {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  display: inline-block;
+  margin-right: 5px;
+}
+
+/* ------------------------------------------------------------- line picker */
+
+.filebox {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  max-height: 320px;
+  overflow: auto;
+  background: var(--paper);
+}
+
+.fileline {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 1px 10px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.fileline:hover {
+  background: var(--raised);
+  border-color: transparent;
+}
+
+.fileline .n {
+  color: var(--muted);
+  min-width: 2.5ch;
+  text-align: right;
+  user-select: none;
+}
+
+.fileline .t {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.fileline.picked {
+  background: var(--dawn-wash);
+}
+
+.fileline.blank .t {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.chosen {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  background: var(--dawn-wash);
+  border: 1px solid var(--dawn);
+  border-radius: 6px;
+  padding: 8px 10px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ------------------------------------------------------------------ tables */
+
+.kv {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 18px;
+  font-size: 14px;
+}
+
+.kv dt {
+  color: var(--muted);
+}
+
+.kv dd {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 13px;
+  word-break: break-all;
+}
+
+.foot {
+  border-top: 1px solid var(--border);
+  margin-top: 48px;
+  padding: 20px 0 40px;
+  font-size: 13px;
+  color: var(--muted);
+}

@@ -24,7 +24,7 @@ Built for Vibestarter's Vibeathon 02 (build window 2-9 Nov 2026).
 | `MorningLine.sol` escrow + `LineToken.sol` fuel | written, 24 tests passing (unit, fuzz, stateful invariants) |
 | Deploy script, Base networks, `DemoUSDC` faucet | written, green in CI |
 | Checker worker | 42 unit tests passing, and confirmed end to end on Base Sepolia: present paid, missing refunded, silence reclaimed |
-| Web app | planned |
+| Web app | built: open a deal, public deal pages, live presence preview |
 | Base Sepolia deployment | live, see below; not yet verified on Basescan |
 | Base mainnet deployment | planned |
 
@@ -75,7 +75,7 @@ Full trust and threat model: [docs/SECURITY.md](docs/SECURITY.md).
 contracts/   Solidity (Hardhat 3): MorningLine.sol, LineToken.sol, DemoUSDC.sol, tests
              scripts/deploy.ts deploys production and demo settings
 checker/     daily GitHub check -> report() on Base
-web/         (planned) open a deal, public deal pages
+web/         Next.js: /new composes a deal, /deal/[id] is the public page
 docs/        PLAN, ARCHITECTURE, SECURITY, DECISIONS
 ```
 
@@ -95,6 +95,31 @@ npm ci
 npm run typecheck
 npm test        # matching, scheduling and decision tests, no network needed
 ```
+
+## Run the web app
+
+```bash
+cd web
+npm ci
+npm run dev     # http://localhost:3000
+```
+
+It needs no configuration: the defaults point at the demo deployment on Base Sepolia. Copy
+`.env.example` to `.env.local` to point it somewhere else.
+
+### Deploying it
+
+The app is a standard Next.js project in `web/`, so on Vercel set **Root Directory** to `web`
+and take the detected build settings. The variables in `web/.env.example` are the ones to set
+in the Vercel project; only `RPC_URL` and `LOG_CHUNK_BLOCKS` are server side. A paid RPC
+endpoint matters for `/api/deal/[id]`: it scans logs for a deal's evidence, and the public Base
+endpoint caps a range at 200 blocks, which limits how far back one request can reach.
+
+### One rule, one copy
+
+`web/lib/match.ts` is a byte-for-byte copy of `checker/src/match.ts`. The deal page previews
+whether a line is present using the same code that decides whether money moves, and CI fails
+the build if the two ever drift.
 
 ## License
 

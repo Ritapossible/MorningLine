@@ -9,3 +9,8 @@ coverage/
 !.env.example
 *.log
 .DS_Store
+
+# Next.js and Vercel
+.next/
+.vercel
+next-env.d.ts
