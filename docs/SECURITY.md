@@ -24,6 +24,7 @@
 | Fee-on-transfer or rebasing token configured | Deposits are checked by balance delta and revert if short. Rebasing tokens are out of scope: the deployment uses USDC. |
 | USDC blacklists the payee | That day's report reverts; after the window the buyer reclaims it. |
 | USDC blacklists the buyer | Refunds and reclaims to that buyer revert; those funds stay in the contract. Accepted: Circle's blacklist is outside our control. |
+| Buyer names themselves or the payee as the deal's checker | The contract allows it: the checker is chosen at open and only the zero address is rejected (D4). A checker that is the payee can report its own line present and take the whole escrow; a checker that is the buyer can report a line missing on days it was up and refund itself, leaving the maintainer unpaid. Since the buyer picks the checker, the second is the likelier one and it harms the side that had no say. Bounded, not prevented: deals opened through the web app always use the published checker, and a deal page says plainly when the checker is the buyer, the payee, or simply unfamiliar, so nobody reads a self dealt deal as a checked one. A maintainer should read that panel before adding the line. |
 | Spec too large (gas griefing) | Each spec field is limited to 512 bytes. |
 | Integer overflow | Solidity 0.8 checked arithmetic; `dailyAmount` is uint128 and `dayCount` at most 366, so totals fit in uint256. |
 

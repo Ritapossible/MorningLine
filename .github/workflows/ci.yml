@@ -51,4 +51,5 @@ jobs:
       # The deal page previews presence with the same rule that settles days. If the two copies
       # drift, the preview lies, so the build fails rather than shipping it.
       - run: npm run check:match
+      - run: npm test
       - run: npm run build

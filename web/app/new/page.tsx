@@ -304,7 +304,9 @@ export default function NewDeal() {
           </dl>
           <p className="small" style={{ marginTop: 10, marginBottom: 0 }}>
             Every day is either paid to the maintainer or returned to you. Nothing is kept by
-            anyone else, and the fuel for a day nobody checks comes back with the refund.
+            anyone else, and the fuel for a day nobody checks comes back with the refund. The
+            checker is fixed here and cannot be you or the maintainer: a deal where one side
+            checks its own line proves nothing.
           </p>
         </section>
       ) : null}

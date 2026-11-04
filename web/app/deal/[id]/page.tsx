@@ -4,6 +4,7 @@ import { use, useEffect, useMemo, useState } from "react";
 import { useAccount, useBlock, usePublicClient, useReadContract, useReadContracts, useWriteContract } from "wagmi";
 import { DayStrip, type DayCell } from "../../../components/DayStrip";
 import { NotPromised } from "../../../components/NotPromised";
+import { CheckerNotice } from "../../../components/CheckerNotice";
 import { MORNINGLINE, addressUrl, morningLineAbi, txUrl } from "../../../lib/contracts";
 import { blobUrl, fileAtCommit, latestCommit } from "../../../lib/github";
 import { linePresent } from "../../../lib/match";
@@ -163,6 +164,8 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
           </p>
         </section>
       ) : null}
+
+      <CheckerNotice checker={deal.checker} buyer={deal.buyer} payee={deal.payee} />
 
       <section className="card" style={{ marginTop: 18 }}>
         <h3>Days</h3>

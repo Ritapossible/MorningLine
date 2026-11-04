@@ -6,7 +6,8 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "check:match": "node scripts/check-match-sync.mjs"
+    "check:match": "node scripts/check-match-sync.mjs",
+    "test": "node --experimental-strip-types --test test/*.test.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "5.105.3",
