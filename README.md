@@ -22,10 +22,24 @@ Built for Vibestarter's Vibeathon 02 (build window 2-9 Nov 2026).
 | Part | State |
 |---|---|
 | `MorningLine.sol` escrow + `LineToken.sol` fuel | written, 24 tests passing (unit, fuzz, stateful invariants) |
-| Deploy script, Base networks, `DemoUSDC` faucet | written, green in CI, not yet run against a network |
+| Deploy script, Base networks, `DemoUSDC` faucet | written, green in CI |
 | Checker worker | written, 33 unit tests passing; not yet run against a live deployment |
 | Web app | planned |
-| Base deployment | planned |
+| Base Sepolia deployment | live, see below; not yet verified on Basescan |
+| Base mainnet deployment | planned |
+
+### Base Sepolia (chain 84532)
+
+| Contract | Address |
+|---|---|
+| MorningLine, production settings (1 day days, 48 h grace) | `0x53a2861c4fbc29f17885b7c3616fbcc4365ad4b3` |
+| MorningLine, demo settings (180 s days, 120 s grace) | `0xcae6005f50ada8c55e6785998aaeb22242aabdbe` |
+| LINE fuel | `0x11bd55d6ef883cfd73e346034b6d90d84f2d1ff9` |
+| DemoUSDC faucet | `0xb997cef9a60b8d6f2f3e9dbc42a769dd4fcc2632` |
+
+Both MorningLine instances point at the same LINE and DemoUSDC, spend 1 LINE per check, and
+burn spent fuel to `0x...dEaD`. Settings were read back from chain after deployment and match
+`docs/ARCHITECTURE.md`. Everything here is testnet: DemoUSDC is worth nothing.
 
 ## What it promises, and what it does not
 
