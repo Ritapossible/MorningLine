@@ -13,8 +13,11 @@ export function DealCardMock() {
   return (
     <div className="night-card" role="img" aria-label="Example deal card">
       <div className="night-top">
-        <span className="night-id mono">EXAMPLE DEAL · 0007</span>
-        <span className="status-pill tone-dawn on-night">Paying daily</span>
+        <span className="night-id">Example deal 7</span>
+        <span className="night-status">
+          <i className="cell" aria-hidden="true" />
+          Paying daily
+        </span>
       </div>
 
       <div className="night-parties">
@@ -51,13 +54,12 @@ export function DealCardMock() {
         </pre>
       </div>
 
-      <div className="night-checks">
-        <span>✓ exact line</span>
-        <span>✓ pinned file</span>
-        <span>✓ commit 3f2a1c9</span>
-      </div>
+      <p className="night-checks mono">Exact line · pinned file · commit 3f2a1c9</p>
 
-      <div className="night-paid">✓ $1.00 sent to the maintainer today</div>
+      <div className="night-paid">
+        <i className="cell" aria-hidden="true" />
+        Day 28 paid: $1.00 to the maintainer
+      </div>
     </div>
   );
 }

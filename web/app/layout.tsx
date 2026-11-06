@@ -25,9 +25,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 Morning Line
               </Link>
               <span className={IS_DEMO ? "net-badge demo" : "net-badge"}>
-                {IS_DEMO ? `demo · ${chain.name}` : chain.name}
+                {IS_DEMO ? `Demo on ${chain.name}` : chain.name}
               </span>
               <nav>
+                <Link href="/#how" className="nav-link">
+                  How it works
+                </Link>
+                <Link href="/docs" className="nav-link">
+                  Docs
+                </Link>
                 <Link href="/new" className="nav-link">
                   Open a deal
                 </Link>
@@ -59,6 +65,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </div>
                 <div>
                   <h4>Learn</h4>
+                  <Link href="/docs">Docs</Link>
                   <Link href="/#how">How it works</Link>
                   <Link href="/#limits">What it does not promise</Link>
                   <a href={`${REPO}/blob/main/docs/SECURITY.md`}>Security</a>
@@ -67,7 +74,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <div>
                   <h4>Network</h4>
                   <span className="foot-net">
-                    <span className="dot" aria-hidden="true" />
+                    <i className="cell live" aria-hidden="true" />
                     {chain.name}
                   </span>
                   <a href={addressUrl(MORNINGLINE)} target="_blank" rel="noreferrer">
@@ -80,8 +87,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </div>
 
               <p className="foot-copy">
-                © 2026 Morning Line · MIT licensed · Built with Claude. The contracts have no owner
-                and no upgrade path.
+                © 2026 Morning Line · MIT licensed · Built with Claude · The contracts have no owner
+                and no upgrade path
               </p>
             </div>
           </footer>
