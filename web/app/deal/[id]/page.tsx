@@ -172,9 +172,9 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
         <DayStrip cells={cells} repo={spec?.repo ?? ""} now={now} />
         {api?.truncated ? (
           <p className="notice warn" style={{ marginTop: 14 }}>
-            This deal is older than one log scan can reach on the configured RPC, so some
-            evidence links may be missing. The day colours above come from contract state and
-            are complete.
+            The RPC did not return every event for this deal, so some evidence links may be
+            missing. Reload to try again. The day colours above come from contract state and are
+            complete.
           </p>
         ) : null}
       </section>

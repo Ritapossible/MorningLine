@@ -111,9 +111,11 @@ It needs no configuration: the defaults point at the demo deployment on Base Sep
 
 The app is a standard Next.js project in `web/`, so on Vercel set **Root Directory** to `web`
 and take the detected build settings. The variables in `web/.env.example` are the ones to set
-in the Vercel project; only `RPC_URL` and `LOG_CHUNK_BLOCKS` are server side. A paid RPC
-endpoint matters for `/api/deal/[id]`: it scans logs for a deal's evidence, and the public Base
-endpoint caps a range at 200 blocks, which limits how far back one request can reach.
+in the Vercel project; only `RPC_URL` is server side. `/api/deal/[id]` finds a deal's evidence
+without wide log scans: it binary-searches contract state for the block the deal was opened in
+and the block each day was settled in, then reads logs from those single blocks. That works on
+the public Base endpoint, which caps a log range at 200 blocks, for deals of any age. It needs
+an RPC that serves historical state, which Base's public endpoints do.
 
 ### One rule, one copy
 

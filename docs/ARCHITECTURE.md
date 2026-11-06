@@ -119,6 +119,10 @@ when configured); any wallet works.
 
 The page shows the checker's last successful run (`/health`) so silence is visible.
 
+`/api/deal/[id]` serves a deal's spec and evidence. It binary-searches historical contract state
+for the block the deal was opened in and the block each day was settled in, then reads logs
+from those single blocks, so it works for deals of any age on an RPC that caps log ranges (D14).
+
 ## 4. Hosting and environments
 | Piece | Where |
 |---|---|

@@ -63,3 +63,14 @@ in the middle of the demo path. `DemoUSDC` is a 6-decimal ERC20 with a daily dri
 the same shape as the LINE faucet. Mainnet uses real USDC and never sees this contract.
 **Cost:** one more contract to deploy and verify, and a deal on Sepolia is denominated in a token
 that is worth nothing. The UI labels it.
+
+### D14 - The deal page finds events by searching state, not by scanning logs (2026-11-06)
+**Why:** the public Base endpoint caps `eth_getLogs` at about 200 blocks, and Base Sepolia makes
+five blocks a second, so a backward scan with a sane request budget reached about 40 minutes
+into the past. Older deals showed no repo and no evidence links. Contract state answers "when"
+without logs: `dealCount` only grows, and a day leaves `Open` exactly once, so a binary search
+over block numbers finds the opening block and each settlement block in about 25 reads each.
+The logs are then read from those single blocks. Each search step for every day goes in one
+batched JSON-RPC request, and settled results are cached, since they cannot change.
+**Cost:** the RPC must serve historical state (Base's public endpoints do; a pruned node would
+not). A cold request for a long deal takes a few seconds.
