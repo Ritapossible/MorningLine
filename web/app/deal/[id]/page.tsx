@@ -5,6 +5,7 @@ import { useAccount, useBlock, usePublicClient, useReadContract, useReadContract
 import { DayStrip, type DayCell } from "../../../components/DayStrip";
 import { NotPromised } from "../../../components/NotPromised";
 import { CheckerNotice } from "../../../components/CheckerNotice";
+import { Wallet } from "../../../components/Wallet";
 import { MORNINGLINE, addressUrl, morningLineAbi, txUrl } from "../../../lib/contracts";
 import { blobUrl, fileAtCommit, latestCommit } from "../../../lib/github";
 import { linePresent } from "../../../lib/match";
@@ -205,8 +206,15 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
             <button className="primary" onClick={reclaim} disabled={busy}>
               {busy ? "Reclaiming" : `Reclaim ${lapsed.length} ${lapsed.length === 1 ? "day" : "days"}`}
             </button>
+          ) : address === undefined ? (
+            <>
+              <p className="small">Only the sponsor can reclaim. Sign in with the wallet that opened the deal.</p>
+              <Wallet />
+            </>
           ) : (
-            <p className="small" style={{ marginBottom: 0 }}>Only the sponsor can reclaim.</p>
+            <p className="small" style={{ marginBottom: 0 }}>
+              Only the sponsor can reclaim, and this wallet did not open the deal.
+            </p>
           )}
           {err ? <p className="notice warn" style={{ marginTop: 12 }}>{err}</p> : null}
         </section>

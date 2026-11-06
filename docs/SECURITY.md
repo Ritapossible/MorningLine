@@ -50,6 +50,15 @@
       contract is unaudited.
 - [ ] Demo deployment clearly labelled, separate from production.
 
+## Web dependencies
+
+Privy brings WalletConnect and Reown into the web app's dependency tree. `npm audit` (production)
+reports three root advisories there, all in browser-side wallet code that never handles the
+server's requests or holds funds: `zod` (memory use on oversized input), `decode-uri-component`
+(denial of service on malformed URLs) and `uuid` (moderate). Fixing them needs major versions
+the wallet libraries do not accept yet. `ws` is pinned to a patched release through `overrides`.
+Re-check on every Privy upgrade; the contracts and the checker are unaffected.
+
 ## Reporting a problem
 Open a GitHub issue without exploit details and ask for a private contact, or message the
 maintainer on X (@ChinazaRitaA).

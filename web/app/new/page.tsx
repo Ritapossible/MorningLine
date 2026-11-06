@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { decodeEventLog, parseUnits } from "viem";
 import {
   useAccount,
+  useBalance,
   usePublicClient,
   useReadContract,
   useWaitForTransactionReceipt,
@@ -23,6 +24,7 @@ import {
 } from "../../lib/contracts";
 import { defaultBranch, fileAtCommit, GitHubError, latestCommit, parseRepo } from "../../lib/github";
 import { linePresent, normalizeLines } from "../../lib/match";
+import { Wallet } from "../../components/Wallet";
 import { usd } from "../../lib/format";
 
 /// The contract rejects a start that is already in the past, and the transaction needs time to
@@ -35,6 +37,9 @@ const CHECKER = (process.env.NEXT_PUBLIC_CHECKER_ADDRESS ??
 export default function NewDeal() {
   const router = useRouter();
   const { address, isConnected, chainId } = useAccount();
+  // A wallet made by email sign-in starts empty, and every step below costs a little gas.
+  const { data: gas } = useBalance({ address, query: { enabled: Boolean(address) } });
+  const noGas = gas !== undefined && gas.value === 0n;
   const publicClient = usePublicClient();
   const { writeContractAsync } = useWriteContract();
 
@@ -316,12 +321,24 @@ export default function NewDeal() {
         <section className="card" style={{ marginTop: 18 }}>
           <h3>4. Sign</h3>
 
-          {!isConnected ? (
-            <p className="notice">Connect a wallet to continue.</p>
-          ) : wrongChain ? (
-            <p className="notice warn">Switch your wallet to the right network.</p>
+          {!isConnected || wrongChain ? (
+            <>
+              <p className="small">
+                {!isConnected
+                  ? "Signing needs a wallet. Sign in with email or Google and one is made for you, or use your own."
+                  : "Your wallet is on another network."}
+              </p>
+              <Wallet />
+            </>
           ) : (
             <>
+              {noGas ? (
+                <p className="notice warn" style={{ marginBottom: 16 }}>
+                  This wallet has no ETH for gas yet. Each step below costs a fraction of a cent.
+                  Send a little {IS_DEMO ? "Base Sepolia ETH (free from any Base Sepolia faucet)" : "ETH on Base"} to{" "}
+                  <span className="mono">{address}</span>, then continue.
+                </p>
+              ) : null}
               {IS_DEMO && (shortUsdc || shortLine) ? (
                 <div className="row" style={{ marginBottom: 14 }}>
                   {shortUsdc && USDC_IS_FAUCET ? (

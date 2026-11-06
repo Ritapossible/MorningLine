@@ -74,3 +74,16 @@ The logs are then read from those single blocks. Each search step for every day 
 batched JSON-RPC request, and settled results are cached, since they cannot change.
 **Cost:** the RPC must serve historical state (Base's public endpoints do; a pruned node would
 not). A cold request for a long deal takes a few seconds.
+
+### D15 - Privy for sign-in, a wallet only where something is signed (2026-11-06)
+**Why:** two things need a wallet, opening a deal and reclaiming days; reading a deal and being
+a maintainer never do. The header no longer asks everyone to connect. Sign-in appears on the
+step that signs. Privy lets a sponsor who has never held crypto sign in with email or Google and
+get an embedded wallet, which matters for the people this is for and for judges trying the live
+URL. It sits behind `NEXT_PUBLIC_PRIVY_APP_ID`; unset, the app uses the plain wagmi connectors,
+and Privy's WagmiProvider keeps every wagmi hook unchanged either way. The hackathon rules name
+no restriction on SDKs or auth providers.
+**Cost:** an embedded wallet starts with no ETH, so the first transaction needs a few cents of
+gas sent to it; the signing step says so. Gas sponsorship through Privy is the follow-up. The
+dependency tree grows (WalletConnect, Reown), adding client-side advisories, see SECURITY.md.
+`web/.npmrc` relaxes peer resolution for an optional peer (`permissionless`) that is never used.

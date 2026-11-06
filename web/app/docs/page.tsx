@@ -1,7 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { NotPromised } from "../../components/NotPromised";
-import { addressUrl, chain, IS_DEMO, LINE, MORNINGLINE, USDC, USDC_IS_FAUCET } from "../../lib/contracts";
+import {
+  addressUrl,
+  chain,
+  IS_DEMO,
+  LINE,
+  MORNINGLINE,
+  USDC,
+  USDC_IS_FAUCET,
+} from "../../lib/contracts";
 
 export const metadata: Metadata = {
   title: "Docs · Morning Line",
@@ -41,8 +49,8 @@ export default function Docs() {
     <>
       <h1>Docs</h1>
       <p className="lede">
-        Everything Morning Line does, in the order you meet it. The contract is the source of
-        truth; this page describes it and links to it.
+        Everything Morning Line does, in the order you meet it. The contract is the source of truth;
+        this page describes it and links to it.
       </p>
 
       <div className="docs" style={{ marginTop: 40 }}>
@@ -62,16 +70,20 @@ export default function Docs() {
             <h2>Overview</h2>
             <p>
               Morning Line is an escrow on Base for one sponsor line in a GitHub repository. A
-              sponsor locks USDC for a number of days. Once a day a checker reads the pinned file
-              at the latest commit of the pinned branch and looks for the exact line. Each day the
-              line is there, that day&apos;s USDC goes to the maintainer. Each day it is missing,
-              that day&apos;s USDC goes back to the sponsor. Every result records the commit hash it
+              sponsor locks USDC for a number of days. Once a day a checker reads the pinned file at
+              the latest commit of the pinned branch and looks for the exact line. Each day the line
+              is there, that day&apos;s USDC goes to the maintainer. Each day it is missing, that
+              day&apos;s USDC goes back to the sponsor. Every result records the commit hash it
               read, so anyone can open that commit and see the file.
             </p>
             <p>
               The contract has no owner, no admin and no upgrade path. Nobody, including the people
-              who built it, can move a deal&apos;s money anywhere except to the maintainer or back to
-              the sponsor.
+              who built it, can move a deal&apos;s money anywhere except to the maintainer or back
+              to the sponsor.
+            </p>
+            <p className="small">
+              Not affiliated with GitHub or Base. Sponsor lines should be disclosed as sponsorships.
+              Nothing here is financial advice.
             </p>
             {IS_DEMO ? (
               <p className="notice good">
@@ -95,16 +107,18 @@ export default function Docs() {
                 once and calls <code>report(dealId, day, present, commitSha)</code>.
               </li>
               <li>
-                <b>Settled.</b> Present sends that day&apos;s USDC to the maintainer. Missing sends it
-                back to the sponsor. Either way one LINE is spent and the commit hash is emitted in
-                a <code>DayReported</code> event.
+                <b>Settled.</b> Present sends that day&apos;s USDC to the maintainer. Missing sends
+                it back to the sponsor. Either way one LINE is spent and the commit hash is emitted
+                in a <code>DayReported</code> event.
               </li>
               <li>
                 <b>Reclaimed.</b> A day nobody reported can be taken back by the sponsor once its
                 window has closed, with <code>reclaim(dealId, days)</code>. Its LINE comes back too.
               </li>
             </ol>
-            <p>Each day is decided on its own and settles exactly once. Nothing is held to the end.</p>
+            <p>
+              Each day is decided on its own and settles exactly once. Nothing is held to the end.
+            </p>
           </section>
 
           <section id="sponsors">
@@ -122,6 +136,11 @@ export default function Docs() {
               <li>
                 Enter the maintainer&apos;s address, the price per day in USDC and the number of
                 days, from 1 to 366. Day 1 begins one minute after you open the deal.
+              </li>
+              <li>
+                Sign in. An existing wallet works; so does email or Google, which creates a wallet
+                for you. That wallet needs a little ETH on {chain.name} for gas, a fraction of a
+                cent per step, and the page says so if it has none.
               </li>
               <li>
                 Approve USDC and LINE, then open the deal.
@@ -142,7 +161,7 @@ export default function Docs() {
           <section id="maintainers">
             <h2>For maintainers</h2>
             <ul>
-              <li>Share an address on Base. No account, no fee and no gas.</li>
+              <li>Share an address on Base. No account, no sign-in, no fee and no gas.</li>
               <li>
                 Add the sponsor&apos;s line to the pinned file, on the pinned branch, exactly as
                 written.
@@ -180,8 +199,8 @@ export default function Docs() {
               <li>A pinned line that is empty or only whitespace never matches.</li>
             </ul>
             <p>
-              The site&apos;s presence preview runs the same code as the checker. CI fails if the two
-              copies ever differ.
+              The site&apos;s presence preview runs the same code as the checker. CI fails if the
+              two copies ever differ.
             </p>
             <h3>When</h3>
             <p>
@@ -195,8 +214,9 @@ export default function Docs() {
             <h2>Timing</h2>
             <p>
               A deal starts at <code>start</code>. Day <code>d</code> (counting from 0) has a report
-              window of <code>[start + d × dayLength, start + (d + 1) × dayLength + reportGrace)</code>.
-              Once the window closes, the sponsor can reclaim the day if nobody reported it.
+              window of{" "}
+              <code>[start + d × dayLength, start + (d + 1) × dayLength + reportGrace)</code>. Once
+              the window closes, the sponsor can reclaim the day if nobody reported it.
             </p>
             <div className="docs-scroll">
               <table className="docs-table">
@@ -222,8 +242,8 @@ export default function Docs() {
               </table>
             </div>
             <p>
-              Both values are fixed in the contract at deployment and cannot change. A deal can start
-              up to 365 days ahead and run for up to 366 days.
+              Both values are fixed in the contract at deployment and cannot change. A deal can
+              start up to 365 days ahead and run for up to 366 days.
             </p>
           </section>
 
@@ -388,9 +408,9 @@ const status = await client.readContract({
             </p>
             <p>
               The endpoint does not scan logs over wide ranges, which public RPCs refuse. It
-              binary-searches contract state for the block the deal was opened in and the block
-              each day was settled in, then reads the logs of those single blocks. It works for deals
-              of any age on an RPC that serves historical state.
+              binary-searches contract state for the block the deal was opened in and the block each
+              day was settled in, then reads the logs of those single blocks. It works for deals of
+              any age on an RPC that serves historical state.
             </p>
           </section>
 

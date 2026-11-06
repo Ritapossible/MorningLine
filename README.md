@@ -111,7 +111,9 @@ It needs no configuration: the defaults point at the demo deployment on Base Sep
 
 The app is a standard Next.js project in `web/`, so on Vercel set **Root Directory** to `web`
 and take the detected build settings. The variables in `web/.env.example` are the ones to set
-in the Vercel project; only `RPC_URL` is server side. `/api/deal/[id]` finds a deal's evidence
+in the Vercel project; only `RPC_URL` is server side. Set `NEXT_PUBLIC_PRIVY_APP_ID` to turn on
+Privy sign-in (email, Google or a wallet); its App ID is public, and the site's domain must be in
+the Privy app's allowed origins. Without it the app uses plain wallet connectors. `/api/deal/[id]` finds a deal's evidence
 without wide log scans: it binary-searches contract state for the block the deal was opened in
 and the block each day was settled in, then reads logs from those single blocks. That works on
 the public Base endpoint, which caps a log range at 200 blocks, for deals of any age. It needs
