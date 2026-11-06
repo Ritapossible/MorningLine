@@ -176,13 +176,8 @@ strong {
   text-decoration: none;
 }
 
-/* The mark is one day cell, paid. */
-.wordmark .sun {
-  flex: none;
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
-  background: var(--dawn);
+.wordmark svg {
+  color: var(--ink);
 }
 
 .net-badge {
@@ -221,7 +216,24 @@ strong {
 
 .masthead nav button {
   min-height: 36px;
+  padding: 0 12px;
+}
+
+.masthead nav .nav-cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
   padding: 0 16px;
+  border-radius: 10px;
+  background: var(--dawn-strong);
+  color: var(--dawn-ink);
+  font-weight: 500;
+  transition: background-color 150ms var(--ease);
+}
+
+.masthead nav .nav-cta:hover {
+  background: color-mix(in srgb, var(--dawn-strong) 88%, black);
+  color: var(--dawn-ink);
 }
 
 @media (max-width: 760px) {
@@ -608,57 +620,9 @@ a.day:hover {
 .foot {
   border-top: 1px solid var(--border);
   margin-top: 96px;
-  padding: 48px 0;
-  font-size: 14px;
-  color: var(--muted);
-}
-
-.foot-mark {
-  color: var(--ink);
-}
-
-.foot-note {
-  max-width: 52ch;
-  margin: 12px 0 40px;
-}
-
-.foot-cols {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 32px;
-}
-
-@media (max-width: 620px) {
-  .foot-cols {
-    grid-template-columns: 1fr;
-  }
-}
-
-.foot-cols h4 {
-  margin: 0 0 12px;
-  color: var(--ink);
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.foot-cols a,
-.foot-net {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  color: var(--muted);
-  text-decoration: none;
-  transition: color 150ms var(--ease);
-}
-
-.foot-cols a:hover {
-  color: var(--ink);
-}
-
-.foot-copy {
-  margin: 40px 0 0;
+  padding: 32px 0;
   font-size: 13px;
+  color: var(--muted);
 }
 
 .page {
