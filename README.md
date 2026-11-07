@@ -119,6 +119,12 @@ and the block each day was settled in, then reads logs from those single blocks.
 the public Base endpoint, which caps a log range at 200 blocks, for deals of any age. It needs
 an RPC that serves historical state, which Base's public endpoints do.
 
+### Hosting the checker
+
+The checker must run all the time. `render.yaml` sets it up on Render as a Blueprint for the demo
+deployment; [docs/HOSTING.md](docs/HOSTING.md) has the step-by-step for Render and Railway, the
+variables it needs and how to tell it is working.
+
 ### One rule, one copy
 
 `web/lib/match.ts` is a byte-for-byte copy of `checker/src/match.ts`. The deal page previews

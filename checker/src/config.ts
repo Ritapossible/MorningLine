@@ -45,7 +45,8 @@ export function loadConfig(): Config {
     githubToken: token === "" ? undefined : token,
     checkSeed: seed,
     pollIntervalMs: Number(process.env.POLL_INTERVAL_MS ?? "600000"),
-    healthPort: Number(process.env.HEALTH_PORT ?? "8080"),
+    // Hosts such as Render and Railway say which port to listen on through PORT.
+    healthPort: Number(process.env.HEALTH_PORT || process.env.PORT || "8080"),
     logChunkBlocks: BigInt(process.env.LOG_CHUNK_BLOCKS ?? "200"),
   };
 }

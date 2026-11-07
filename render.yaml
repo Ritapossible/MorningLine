@@ -1,0 +1,36 @@
+# Render Blueprint for the checker. New > Blueprint in the Render dashboard, pick this repo.
+# Secrets are `sync: false`: Render asks for them when the Blueprint is created and never reads
+# them from this file. Full steps: docs/HOSTING.md.
+services:
+  - type: web
+    name: morningline-checker
+    runtime: node
+    plan: free
+    rootDir: checker
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # Demo deployment on Base Sepolia (180-second days, 120-second grace).
+      - key: RPC_URL
+        value: https://sepolia.base.org
+      - key: MORNINGLINE_ADDRESS
+        value: "0xcae6005f50ada8c55e6785998aaeb22242aabdbe"
+      # Deals opened before this block are not watched. Every demo deal before it has ended.
+      - key: START_BLOCK
+        value: "55572000"
+      # A demo day lasts 3 minutes and its report window 5, so poll every 20 seconds.
+      # Production (24-hour days) can use the default 600000.
+      - key: POLL_INTERVAL_MS
+        value: "20000"
+      - key: LOG_CHUNK_BLOCKS
+        value: "200"
+      - key: CHECKER_PRIVATE_KEY
+        sync: false
+      - key: CHECK_SEED
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
