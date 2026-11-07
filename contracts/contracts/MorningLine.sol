@@ -10,9 +10,17 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 ///
 /// A buyer locks `dailyAmount * dayCount` USDC plus one unit of fuel per day. Each day the
 /// deal's checker reports whether the exact line was present in the pinned file at the
-/// latest commit of the pinned branch, together with that commit's SHA. A present day pays
-/// the payee; a missing day refunds the buyer. Every report spends one unit of fuel. If a
-/// day is not reported within `reportGrace` after it ends, the buyer can reclaim it.
+/// latest commit of the pinned branch, together with that commit's SHA and a hash of the file
+/// it read. A present day pays the payee; a missing day refunds the buyer. Every report spends
+/// one unit of fuel. If a day is not reported within `reportGrace` after it ends, the buyer
+/// can reclaim it.
+///
+/// A deal can change length, never terms:
+/// - the buyer can cancel, which ends the deal after the days already started plus
+///   `cancelNotice` more, so a payee who added the line is never cut off without notice;
+/// - the payee can release, which ends the deal after the days already started;
+/// - the buyer can extend a running deal by more days at the same price.
+/// Days removed by cancel or release are refunded to the buyer with their fuel, at once.
 ///
 /// There is no owner, no upgrade path and no admin function. The checker of a deal is fixed
 /// when the deal is opened and can only choose, per day, between paying the payee and
@@ -45,6 +53,7 @@ contract MorningLine is ReentrancyGuard {
         string line;
     }
 
+    uint256 public constant VERSION = 2;
     uint256 public constant MAX_DAYS = 366;
     uint256 public constant MAX_FIELD_BYTES = 512;
     uint256 public constant MAX_START_DELAY = 365 days;
@@ -55,6 +64,8 @@ contract MorningLine is ReentrancyGuard {
     address public immutable fuelSink;
     uint256 public immutable dayLength;
     uint256 public immutable reportGrace;
+    /// @notice Days that still run after a buyer cancels, counted from the first day not yet started.
+    uint256 public immutable cancelNotice;
 
     uint256 public dealCount;
     mapping(uint256 dealId => Deal) private _deals;
@@ -71,8 +82,12 @@ contract MorningLine is ReentrancyGuard {
         bytes32 specHash
     );
     event DealSpec(uint256 indexed dealId, string repo, string branch, string path, string line);
-    event DayReported(uint256 indexed dealId, uint256 indexed day, bool present, bytes20 commitSha);
+    /// @param fileHash keccak256 of the raw file the check read; zero if the file was not there.
+    event DayReported(uint256 indexed dealId, uint256 indexed day, bool present, bytes20 commitSha, bytes32 fileHash);
     event DayReclaimed(uint256 indexed dealId, uint256 indexed day);
+    /// @notice The deal now ends after `newDayCount` days; `refunded` days went back to the buyer.
+    event DealShortened(uint256 indexed dealId, address indexed by, uint16 oldDayCount, uint16 newDayCount, uint256 refunded);
+    event DealExtended(uint256 indexed dealId, uint16 oldDayCount, uint16 newDayCount);
 
     error ZeroAddress();
     error BadConfig();
@@ -83,12 +98,15 @@ contract MorningLine is ReentrancyGuard {
     error UnknownDeal();
     error NotChecker();
     error NotBuyer();
+    error NotPayee();
     error BadDay();
     error AlreadySettled();
     error OutsideWindow();
     error MissingCommit();
     error TransferShortfall();
     error NothingToReclaim();
+    error NothingToShorten();
+    error DealEnded();
 
     constructor(
         IERC20 usdc_,
@@ -96,18 +114,20 @@ contract MorningLine is ReentrancyGuard {
         uint256 fuelPerCheck_,
         address fuelSink_,
         uint256 dayLength_,
-        uint256 reportGrace_
+        uint256 reportGrace_,
+        uint256 cancelNotice_
     ) {
         if (address(usdc_) == address(0) || address(fuelToken_) == address(0) || fuelSink_ == address(0)) {
             revert ZeroAddress();
         }
-        if (fuelPerCheck_ == 0 || dayLength_ == 0 || reportGrace_ == 0) revert BadConfig();
+        if (fuelPerCheck_ == 0 || dayLength_ == 0 || reportGrace_ == 0 || cancelNotice_ == 0) revert BadConfig();
         usdc = usdc_;
         fuelToken = fuelToken_;
         fuelPerCheck = fuelPerCheck_;
         fuelSink = fuelSink_;
         dayLength = dayLength_;
         reportGrace = reportGrace_;
+        cancelNotice = cancelNotice_;
     }
 
     // ---------------------------------------------------------------- buyer
@@ -151,6 +171,39 @@ contract MorningLine is ReentrancyGuard {
         emit DealSpec(dealId, spec.repo, spec.branch, spec.path, spec.line);
     }
 
+    /// @notice End the deal early. Days already started still run, plus `cancelNotice` more; every
+    /// later day is refunded now with its fuel.
+    function cancel(uint256 dealId) external nonReentrant {
+        Deal storage d = _existing(dealId);
+        if (msg.sender != d.buyer) revert NotBuyer();
+        _shorten(dealId, d, _started(d) + cancelNotice);
+    }
+
+    /// @notice The payee ends the deal: days already started still run; every later day is
+    /// refunded to the buyer now with its fuel.
+    function release(uint256 dealId) external nonReentrant {
+        Deal storage d = _existing(dealId);
+        if (msg.sender != d.payee) revert NotPayee();
+        _shorten(dealId, d, _started(d));
+    }
+
+    /// @notice Add days to a running deal at the same price. The new days follow the last one.
+    function extend(uint256 dealId, uint16 extraDays) external nonReentrant {
+        Deal storage d = _existing(dealId);
+        if (msg.sender != d.buyer) revert NotBuyer();
+        if (extraDays == 0) revert BadDayCount();
+        // Only while the last day has not ended, so new days never start in the past.
+        if (block.timestamp >= uint256(d.start) + uint256(d.dayCount) * dayLength) revert DealEnded();
+        uint256 newCount = uint256(d.dayCount) + extraDays;
+        if (newCount > MAX_DAYS) revert BadDayCount();
+
+        uint16 old = d.dayCount;
+        d.dayCount = uint16(newCount);
+        _pullExact(usdc, uint256(d.dailyAmount) * extraDays);
+        _pullExact(fuelToken, fuelPerCheck * extraDays);
+        emit DealExtended(dealId, old, uint16(newCount));
+    }
+
     /// @notice Refund days whose report window closed without a report, with their unused fuel.
     function reclaim(uint256 dealId, uint256[] calldata dayList) external nonReentrant {
         Deal storage d = _existing(dealId);
@@ -177,14 +230,18 @@ contract MorningLine is ReentrancyGuard {
 
     /// @notice Settle one day. Present pays the payee; missing refunds the buyer. Spends one fuel.
     /// @param commitSha The commit the check read. Required when `present` is true.
-    function report(uint256 dealId, uint256 day, bool present, bytes20 commitSha) external nonReentrant {
+    /// @param fileHash keccak256 of the raw file read at that commit; zero if it was not there.
+    function report(uint256 dealId, uint256 day, bool present, bytes20 commitSha, bytes32 fileHash)
+        external
+        nonReentrant
+    {
         Deal storage d = _existing(dealId);
         if (msg.sender != d.checker) revert NotChecker();
         if (day >= d.dayCount) revert BadDay();
         if (_status[dealId][day] != DayStatus.Open) revert AlreadySettled();
         (uint256 opens, uint256 closes) = _window(d, day);
         if (block.timestamp < opens || block.timestamp >= closes) revert OutsideWindow();
-        if (present && commitSha == bytes20(0)) revert MissingCommit();
+        if (present && (commitSha == bytes20(0) || fileHash == bytes32(0))) revert MissingCommit();
 
         _status[dealId][day] = present ? DayStatus.Paid : DayStatus.Refunded;
         d.settled += 1;
@@ -192,7 +249,7 @@ contract MorningLine is ReentrancyGuard {
         fuelToken.safeTransfer(fuelSink, fuelPerCheck);
         usdc.safeTransfer(present ? d.payee : d.buyer, d.dailyAmount);
 
-        emit DayReported(dealId, day, present, commitSha);
+        emit DayReported(dealId, day, present, commitSha, fileHash);
     }
 
     // ---------------------------------------------------------------- views
@@ -212,6 +269,11 @@ contract MorningLine is ReentrancyGuard {
         return _window(d, day);
     }
 
+    /// @notice How many days have started (opened) so far. These can no longer be removed.
+    function daysStarted(uint256 dealId) external view returns (uint256) {
+        return _started(_existing(dealId));
+    }
+
     function specHashOf(Spec calldata spec) external pure returns (bytes32) {
         return keccak256(abi.encode(spec.repo, spec.branch, spec.path, spec.line));
     }
@@ -226,6 +288,27 @@ contract MorningLine is ReentrancyGuard {
     function _window(Deal storage d, uint256 day) private view returns (uint256 opens, uint256 closes) {
         opens = uint256(d.start) + day * dayLength;
         closes = opens + dayLength + reportGrace;
+    }
+
+    /// @dev Days whose window has opened, capped at the deal's length. A day can only be settled
+    /// once it has opened, so every settled day is below this count: shortening a deal to it or
+    /// beyond never removes a settled day.
+    function _started(Deal storage d) private view returns (uint256) {
+        if (block.timestamp < d.start) return 0;
+        uint256 n = (block.timestamp - d.start) / dayLength + 1;
+        return n < d.dayCount ? n : d.dayCount;
+    }
+
+    /// @dev End the deal after `newCount` days, refunding every removed day with its fuel.
+    function _shorten(uint256 dealId, Deal storage d, uint256 newCount) private {
+        uint16 old = d.dayCount;
+        if (newCount >= old) revert NothingToShorten();
+        uint256 removed = old - newCount;
+        d.dayCount = uint16(newCount);
+
+        usdc.safeTransfer(d.buyer, uint256(d.dailyAmount) * removed);
+        fuelToken.safeTransfer(d.buyer, fuelPerCheck * removed);
+        emit DealShortened(dealId, msg.sender, old, uint16(newCount), removed);
     }
 
     function _checkField(string calldata s) private pure {

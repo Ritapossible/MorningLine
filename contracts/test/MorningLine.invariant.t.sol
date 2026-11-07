@@ -55,7 +55,7 @@ contract Handler is Test {
         (uint256 opens, uint256 closes) = ml.dayWindow(id, day);
         if (block.timestamp < opens || block.timestamp >= closes) return;
         vm.prank(checker);
-        ml.report(id, day, present, present ? bytes20(uint160(1)) : bytes20(0));
+        ml.report(id, day, present, present ? bytes20(uint160(1)) : bytes20(0), present ? bytes32(uint256(1)) : bytes32(0));
         ghostChecks++;
         if (present) ghostPaid += d.dailyAmount;
     }
@@ -73,6 +73,39 @@ contract Handler is Test {
         list[0] = day;
         vm.prank(d.buyer);
         ml.reclaim(id, list);
+    }
+
+    function cancel(uint256 dealSeed) external {
+        uint256 count = ml.dealCount();
+        if (count == 0) return;
+        uint256 id = bound(dealSeed, 1, count);
+        MorningLine.Deal memory d = ml.getDeal(id);
+        if (ml.daysStarted(id) + ml.cancelNotice() >= d.dayCount) return;
+        vm.prank(d.buyer);
+        ml.cancel(id);
+    }
+
+    function release(uint256 dealSeed) external {
+        uint256 count = ml.dealCount();
+        if (count == 0) return;
+        uint256 id = bound(dealSeed, 1, count);
+        MorningLine.Deal memory d = ml.getDeal(id);
+        if (ml.daysStarted(id) >= d.dayCount) return;
+        vm.prank(d.payee);
+        ml.release(id);
+    }
+
+    function extend(uint256 dealSeed, uint16 extra) external {
+        uint256 count = ml.dealCount();
+        if (count == 0) return;
+        uint256 id = bound(dealSeed, 1, count);
+        MorningLine.Deal memory d = ml.getDeal(id);
+        extra = uint16(bound(extra, 1, 5));
+        if (block.timestamp >= uint256(d.start) + uint256(d.dayCount) * ml.dayLength()) return;
+        if (uint256(d.dayCount) + extra > ml.MAX_DAYS()) return;
+        if (line.balanceOf(d.buyer) < uint256(extra) * ml.fuelPerCheck()) return;
+        vm.prank(d.buyer);
+        ml.extend(id, extra);
     }
 
     function wait(uint256 secs) external {
@@ -118,7 +151,7 @@ contract MorningLineInvariantTest is Test {
         vm.warp(1_800_000_000);
         usdc = new MockUSDC();
         line = new LineToken();
-        ml = new MorningLine(IERC20(address(usdc)), IERC20(address(line)), 1 ether, SINK, 1 days, 48 hours);
+        ml = new MorningLine(IERC20(address(usdc)), IERC20(address(line)), 1 ether, SINK, 1 days, 48 hours, 1);
         handler = new Handler(ml, usdc, line);
         targetContract(address(handler));
     }
