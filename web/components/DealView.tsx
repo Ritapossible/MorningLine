@@ -41,7 +41,7 @@ export function DealView({ id, contract }: { id: string; contract: DealContract 
   const { data: block } = useBlock({ watch: true });
   const now = block?.timestamp ?? BigInt(Math.floor(Date.now() / 1000));
 
-  const { data: deal, refetch: refetchDeal } = useReadContract({
+  const { data: deal, refetch: refetchDeal, isError: dealError } = useReadContract({
     address: ML, abi: morningLineAbi, functionName: "getDeal", args: [dealId],
   });
   const { data: dayLength } = useReadContract({ address: ML, abi: morningLineAbi, functionName: "dayLength" });
@@ -148,7 +148,19 @@ export function DealView({ id, contract }: { id: string; contract: DealContract 
     });
   }, [deal, dayLength, reportGrace, dayCount, statuses, byDay, now]);
 
-  if (!deal || deal.buyer === "0x0000000000000000000000000000000000000000") {
+  // Still reading the chain: say so, rather than flash "no such deal" before the data arrives.
+  if (!deal) {
+    return (
+      <>
+        <h1>Deal {id}</h1>
+        <p className="lede">
+          {dealError ? "This deal could not be read from the chain just now. Refresh to try again." : "Reading this deal from the chain."}
+        </p>
+      </>
+    );
+  }
+
+  if (deal.buyer === "0x0000000000000000000000000000000000000000") {
     return (
       <>
         <h1>Deal {id}</h1>
