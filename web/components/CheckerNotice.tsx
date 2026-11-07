@@ -1,5 +1,6 @@
 import { classifyChecker } from "../lib/checker";
 import { CHECKER, RETIRED_CHECKERS } from "../lib/contracts";
+import { CheckerStatus } from "./CheckerStatus";
 
 /// Renders the finding from classifyChecker, which carries the reasoning and the tests.
 
@@ -67,9 +68,12 @@ export function CheckerNotice({ checker, buyer, payee }: Props) {
   }
 
   return (
-    <p className="small" style={{ marginTop: 14 }}>
-      Checked by the Morning Line checker, which is neither the sponsor nor the maintainer. It
-      can only choose, per day, between paying the maintainer and refunding the sponsor.
-    </p>
+    <div style={{ marginTop: 16 }}>
+      <CheckerStatus />
+      <p className="small" style={{ marginTop: 8 }}>
+        Checked by the Morning Line checker, which is neither the sponsor nor the maintainer. It
+        can only choose, per day, between paying the maintainer and refunding the sponsor.
+      </p>
+    </div>
   );
 }

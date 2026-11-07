@@ -4,6 +4,7 @@ import { NotPromised } from "../components/NotPromised";
 import { StampArt, FloatChip, Icon } from "../components/landing/StampArt";
 import { DealCardMock } from "../components/landing/DealCardMock";
 import { LiveBoard } from "../components/landing/LiveBoard";
+import { CheckerStatus } from "../components/CheckerStatus";
 import { PriceCalc } from "../components/landing/PriceCalc";
 
 const GRACE = IS_DEMO ? "2 minutes on this demo deployment" : "48 hours";
@@ -136,8 +137,7 @@ export default function Home() {
 
         <div className="board">
           <div className="board-bar">
-            <i className="cell" aria-hidden="true" />
-            Newest deals, read from the contract on {chain.name}
+            <CheckerStatus />
             <a href={addressUrl(MORNINGLINE)} target="_blank" rel="noreferrer">
               Contract ↗
             </a>

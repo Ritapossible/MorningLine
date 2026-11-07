@@ -1131,8 +1131,28 @@ a.day:hover {
   font-size: 13px;
 }
 
-.board-bar .cell {
+.checker-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.board-bar .checker-status {
+  color: var(--night-muted);
+}
+
+.board-bar .cell.live {
   background: #4cc38a;
+}
+
+.board-bar .cell.reclaimed {
+  background: #9b87c4;
+}
+
+.board-bar .cell.due {
+  outline-color: var(--night-dawn);
 }
 
 .board-bar a {
