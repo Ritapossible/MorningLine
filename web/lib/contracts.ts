@@ -18,7 +18,7 @@ export const IS_DEMO = (process.env.NEXT_PUBLIC_IS_DEMO ?? "true") === "true";
 
 /// The checker new deals are opened against. A deal's checker is fixed for its whole life.
 export const CHECKER = (process.env.NEXT_PUBLIC_CHECKER_ADDRESS ??
-  "0x84c85b69a52EA047C168cDcA87496C884531343C") as `0x${string}`;
+  "0xf0A44A43F5CE37236806CBF19a03fd300B540CE2") as `0x${string}`;
 
 /// Checkers this site ran before. Their deals are still ours and shown as such, but no new deal
 /// may name one: a retired checker's key is gone, so nobody would report its days.
