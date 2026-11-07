@@ -101,8 +101,8 @@ The v2 contracts, LINE and Demo USDC are verified on
 The live app uses the demo settings so a full deal plays out in minutes: on the demo, a "day"
 lasts 3 minutes. The production contract runs the same code with 24-hour days. The v1 contracts
 (`0x53a2…b4b3` and `0xcae6…bdbe`), from before deals could be cancelled or extended, still hold
-the first test deals. Both instances spend
-1 LINE per check and burn spent fuel to `0x…dEaD`. Testnet tokens have no value.
+the first test deals; the demo one is shown at `/deal/v1/<id>` on the live app. Every instance
+spends 1 LINE per check and burns spent fuel to `0x…dEaD`. Testnet tokens have no value.
 
 ## Getting started
 
