@@ -9,7 +9,6 @@ import {
   usePublicClient,
   useReadContract,
   useWaitForTransactionReceipt,
-  useWriteContract,
 } from "wagmi";
 import {
   CHAIN_ID,
@@ -25,6 +24,7 @@ import {
 import { defaultBranch, fileAtCommit, GitHubError, latestCommit, parseRepo } from "../../lib/github";
 import { linePresent, normalizeLines } from "../../lib/match";
 import { Wallet } from "../../components/Wallet";
+import { useWrite } from "../../lib/useWrite";
 import { usd } from "../../lib/format";
 
 /// The contract rejects a start that is already in the past, and the transaction needs time to
@@ -37,11 +37,11 @@ const CHECKER = (process.env.NEXT_PUBLIC_CHECKER_ADDRESS ??
 export default function NewDeal() {
   const router = useRouter();
   const { address, isConnected, chainId } = useAccount();
+  const { write, sponsored } = useWrite();
   // A wallet made by email sign-in starts empty, and every step below costs a little gas.
   const { data: gas } = useBalance({ address, query: { enabled: Boolean(address) } });
-  const noGas = gas !== undefined && gas.value === 0n;
+  const noGas = gas !== undefined && gas.value === 0n && !sponsored;
   const publicClient = usePublicClient();
-  const { writeContractAsync } = useWriteContract();
 
   const [repoInput, setRepoInput] = useState("");
   const [branch, setBranch] = useState("");
@@ -145,13 +145,13 @@ export default function NewDeal() {
   }
 
   async function drip(token: `0x${string}`, after: () => void) {
-    const hash = await writeContractAsync({ address: token, abi: faucetAbi, functionName: "drip" });
+    const hash = await write({ address: token, abi: faucetAbi, functionName: "drip" });
     await publicClient?.waitForTransactionReceipt({ hash });
     after();
   }
 
   async function approve(token: `0x${string}`, amount: bigint, after: () => void) {
-    const hash = await writeContractAsync({
+    const hash = await write({
       address: token, abi: erc20Abi, functionName: "approve", args: [MORNINGLINE, amount],
     });
     await publicClient?.waitForTransactionReceipt({ hash });
@@ -163,7 +163,7 @@ export default function NewDeal() {
     const now = (await publicClient.getBlock()).timestamp;
     const start = now + START_BUFFER;
 
-    const hash = await writeContractAsync({
+    const hash = await write({
       address: MORNINGLINE,
       abi: morningLineAbi,
       functionName: "openDeal",

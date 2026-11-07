@@ -87,3 +87,14 @@ no restriction on SDKs or auth providers.
 gas sent to it; the signing step says so. Gas sponsorship through Privy is the follow-up. The
 dependency tree grows (WalletConnect, Reown), adding client-side advisories, see SECURITY.md.
 `web/.npmrc` relaxes peer resolution for an optional peer (`permissionless`) that is never used.
+
+### D16 - Gas sponsorship through Privy, behind a flag (2026-11-07)
+**Why:** a wallet made by email sign-in starts with no ETH, so a new sponsor has to find a
+faucet before the first transaction. Privy can pay that gas, but only for transactions sent
+with its own `sendTransaction` and `sponsor: true` from an embedded wallet; wagmi's
+`writeContract` never sets the flag. Every transaction now goes through `lib/useWrite.ts`, which
+sends through Privy with `sponsor: true` when `NEXT_PUBLIC_PRIVY_SPONSOR_GAS` is on and the
+signer is an embedded wallet, and through wagmi otherwise.
+**Cost:** the flag must match the dashboard (sponsorship on, chain selected, client
+transactions allowed), or sponsored sends fail. Sponsored gas is paid from Privy credits.
+External wallets still pay their own gas.

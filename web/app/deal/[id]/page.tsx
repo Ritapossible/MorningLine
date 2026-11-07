@@ -1,11 +1,12 @@
 "use client";
 
 import { use, useEffect, useMemo, useState } from "react";
-import { useAccount, useBlock, usePublicClient, useReadContract, useReadContracts, useWriteContract } from "wagmi";
+import { useAccount, useBlock, usePublicClient, useReadContract, useReadContracts } from "wagmi";
 import { DayStrip, type DayCell } from "../../../components/DayStrip";
 import { NotPromised } from "../../../components/NotPromised";
 import { CheckerNotice } from "../../../components/CheckerNotice";
 import { Wallet } from "../../../components/Wallet";
+import { useWrite } from "../../../lib/useWrite";
 import { MORNINGLINE, addressUrl, morningLineAbi, txUrl } from "../../../lib/contracts";
 import { blobUrl, fileAtCommit, latestCommit } from "../../../lib/github";
 import { linePresent } from "../../../lib/match";
@@ -23,7 +24,7 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
   const dealId = BigInt(id);
   const { address } = useAccount();
   const publicClient = usePublicClient();
-  const { writeContractAsync } = useWriteContract();
+  const { write } = useWrite();
 
   const [api, setApi] = useState<Api | null>(null);
   const [live, setLive] = useState<"checking" | "present" | "missing" | "error" | null>(null);
@@ -122,7 +123,7 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
     setBusy(true);
     setErr(null);
     try {
-      const hash = await writeContractAsync({
+      const hash = await write({
         address: MORNINGLINE, abi: morningLineAbi, functionName: "reclaim",
         args: [dealId, lapsed.map((d) => BigInt(d))],
       });
