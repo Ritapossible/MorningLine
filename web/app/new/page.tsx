@@ -16,6 +16,7 @@ import {
   LINE,
   CHECKER,
   CHECKER_RETIRED,
+  DAY_WORDS,
   MORNINGLINE,
   USDC,
   USDC_IS_FAUCET,
@@ -352,7 +353,7 @@ export default function NewDeal() {
               <input type="text" autoCapitalize="none" autoCorrect="off" spellCheck={false} inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
             </label>
             <label className="field">
-              <span>Days <span className="hint">(1 to 366)</span></span>
+              <span>Days <span className="hint">(1 to 366; {DAY_WORDS})</span></span>
               <input type="number" min={1} max={366} value={days} onChange={(e) => setDays(e.target.value)} />
             </label>
           </div>

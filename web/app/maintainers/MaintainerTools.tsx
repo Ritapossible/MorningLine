@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useAccount, useReadContract, useReadContracts } from "wagmi";
-import { MORNINGLINE, morningLineAbi } from "../../lib/contracts";
+import { DAY_WORDS, MORNINGLINE, morningLineAbi } from "../../lib/contracts";
 import { usd } from "../../lib/format";
 import { findFile, GitHubError, latestCommit, parseRepo, resolveBranch } from "../../lib/github";
 import { linePresent } from "../../lib/match";
@@ -157,7 +157,7 @@ function SponsorLink() {
         </label>
         <label className="field">
           <span>
-            Days <span className="hint">(1 to 366)</span>
+            Days <span className="hint">(1 to 366; {DAY_WORDS})</span>
           </span>
           <input type="number" min={1} max={366} value={days} onChange={(e) => setDays(e.target.value)} />
         </label>

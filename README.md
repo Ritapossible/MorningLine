@@ -33,9 +33,13 @@ check it.
 2. **Check daily.** Once a day, at a time the maintainer cannot predict, the checker reads the
    pinned file at the latest commit of the pinned branch and looks for the whole line.
 3. **Settle each day on its own.** Present sends that day's USDC to the maintainer; missing sends
-   it back to the sponsor. Either way the commit hash goes on chain and one LINE is burned.
+   it back to the sponsor. Either way the commit hash and a hash of the file go on chain and one
+   LINE is burned.
 4. **Silence is never final.** A day nobody reports becomes reclaimable by the sponsor once its
    report window closes (48 hours after the day ends in production).
+5. **Change the length, never the terms.** The sponsor can cancel, which keeps the days already
+   started plus one day of notice for the maintainer, or add days at the same price. The
+   maintainer can end the deal early. Removed days are refunded at once.
 
 The maintainer needs only an address on Base: no account, no fee and no gas.
 
@@ -47,15 +51,20 @@ The maintainer needs only an address on Base: no account, no fee and no gas.
 - No owner, admin or upgrade path can move a deal's money. The checker can only choose, per
   day, between those two outcomes.
 - A day nobody reports goes back to the sponsor after the grace period.
+- Cancelling or ending early never removes a day that has started, and a sponsor's cancel always
+  leaves the maintainer a day of notice.
 
 **Not promised** (also shown on every deal page)
 
-- A commit hash proves what that commit contains, not that it was the commit visitors saw that
-  day. The checker chooses which commit to report; anyone can compare it with the public history.
-- Only the exact raw line in the pinned file counts. A remotely hosted image is not covered.
+- The checker chooses which commit to read. The deal page checks every reported commit is in the
+  branch's history and that the file matches the hash on chain, but it cannot yet prove the
+  commit was the branch head at that minute.
+- The exact line in the pinned file counts, plus any image the line shows from the repository
+  itself. Images hosted elsewhere are not covered.
 - Matching is literal text, not meaning. A reformatted line counts as missing.
 - There is no dispute mechanism. A dishonest checker is visible and bounded, not prevented.
-- If the repository is deleted, its evidence goes with it.
+- If the repository is deleted, its commit links stop working; each day's file hash stays on
+  chain.
 
 ## Architecture
 
@@ -78,13 +87,16 @@ More detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 | Contract | Address |
 |---|---|
-| MorningLine, production settings (24 h days, 48 h grace) | `0x53a2861c4fbc29f17885b7c3616fbcc4365ad4b3` |
-| MorningLine, demo settings (180 s days, 120 s grace) | `0xcae6005f50ada8c55e6785998aaeb22242aabdbe` |
+| MorningLine v2, production settings (24 h days, 48 h grace, 1 day cancel notice) | `0xf007cc0f987253c94f33a6612dc776a120afc5a5` |
+| MorningLine v2, demo settings (3 min days, 2 min grace, 1 day cancel notice) | `0xe3b293d5b4eb9a07fd0e3c8b9fda57f7124babef` |
 | LINE (fuel) | `0x11bd55d6ef883cfd73e346034b6d90d84f2d1ff9` |
 | Demo USDC (faucet) | `0xb997cef9a60b8d6f2f3e9dbc42a769dd4fcc2632` |
 | Checker | `0xf0A44A43F5CE37236806CBF19a03fd300B540CE2` |
 
-The live app uses the demo settings so a full deal plays out in minutes. Both instances spend
+The live app uses the demo settings so a full deal plays out in minutes: on the demo, a "day"
+lasts 3 minutes. The production contract runs the same code with 24-hour days. The v1 contracts
+(`0x53a2…b4b3` and `0xcae6…bdbe`), from before deals could be cancelled or extended, still hold
+the first test deals. Both instances spend
 1 LINE per check and burn spent fuel to `0x…dEaD`. Testnet tokens have no value.
 
 ## Getting started
@@ -145,8 +157,8 @@ wallet, keeping the service awake, and troubleshooting.
 
 | Area | State |
 |---|---|
-| Contracts | 24 tests passing (unit, fuzz, stateful invariants) |
-| Checker | 42 tests passing; running against the demo deployment |
+| Contracts | v2: 40 tests passing (unit, fuzz, stateful invariants) |
+| Checker | 55 tests passing; running against the v2 demo deployment |
 | Web app | Live: open a deal, public deal pages, docs, live checker status |
 | Base Sepolia | Deployed; contracts not yet verified on Basescan |
 | Base mainnet | Planned |

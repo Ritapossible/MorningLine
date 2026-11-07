@@ -37,18 +37,25 @@ const client = createPublicClient({
 
 /// Where to start searching. Any block at or before the deployment works; a hint past the
 /// deployment is detected and ignored.
-const START_HINT = BigInt(process.env.NEXT_PUBLIC_START_BLOCK ?? "0");
+const START_HINT = BigInt(process.env.NEXT_PUBLIC_START_BLOCK ?? "55642039");
 
 const SPEC = parseAbiItem(
   "event DealSpec(uint256 indexed dealId, string repo, string branch, string path, string line)",
 );
 const REPORTED = parseAbiItem(
-  "event DayReported(uint256 indexed dealId, uint256 indexed day, bool present, bytes20 commitSha)",
+  "event DayReported(uint256 indexed dealId, uint256 indexed day, bool present, bytes20 commitSha, bytes32 fileHash)",
 );
 const RECLAIMED = parseAbiItem("event DayReclaimed(uint256 indexed dealId, uint256 indexed day)");
 
 type Spec = { repo: string; branch: string; path: string; line: string };
-type Report = { day: number; present: boolean | null; sha: string | null; tx: string };
+type Report = {
+  day: number;
+  present: boolean | null;
+  sha: string | null;
+  /// keccak256 of the file text the checker read; null for a reclaimed day.
+  fileHash: string | null;
+  tx: string;
+};
 
 /// Settled facts, keyed by `${address}:${dealId}` and `${address}:${dealId}:${day}`.
 const openedAt = new Map<string, bigint>();
@@ -128,13 +135,14 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
             day: Number(l.args.day),
             present: l.args.present ?? false,
             sha: l.args.commitSha ?? null,
+            fileHash: l.args.fileHash ?? null,
             tx: l.transactionHash ?? "",
           });
         }
         for (const l of reclaimed) {
           if (l.args.day === undefined) continue;
           reportCache.set(`${key}:${Number(l.args.day)}`, {
-            day: Number(l.args.day), present: null, sha: null, tx: l.transactionHash ?? "",
+            day: Number(l.args.day), present: null, sha: null, fileHash: null, tx: l.transactionHash ?? "",
           });
         }
       }),

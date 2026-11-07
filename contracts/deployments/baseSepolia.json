@@ -1,23 +1,45 @@
 {
   "network": "baseSepolia",
   "chainId": 84532,
-  "deployedAt": "2026-11-04T11:13:57.195Z",
-  "deployer": "0x84c85b69a52ea047c168cdca87496c884531343c",
+  "deployedAt": "2026-11-07T11:17:57.099Z",
+  "deployer": "0x0b5925c161404d41b03a5a09f001c700852a5cb6",
   "usdc": "0xb997cef9a60b8d6f2f3e9dbc42a769dd4fcc2632",
   "demoUsdc": "0xb997cef9a60b8d6f2f3e9dbc42a769dd4fcc2632",
   "line": "0x11bd55d6ef883cfd73e346034b6d90d84f2d1ff9",
+  "version": 2,
+  "startBlock": 55642039,
   "morningLine": {
     "production": {
-      "address": "0x53a2861c4fbc29f17885b7c3616fbcc4365ad4b3",
+      "address": "0xf007cc0f987253c94f33a6612dc776a120afc5a5",
       "dayLength": 86400,
-      "reportGrace": 172800
+      "reportGrace": 172800,
+      "cancelNotice": 1
     },
     "demo": {
-      "address": "0xcae6005f50ada8c55e6785998aaeb22242aabdbe",
+      "address": "0xe3b293d5b4eb9a07fd0e3c8b9fda57f7124babef",
       "dayLength": 180,
-      "reportGrace": 120
+      "reportGrace": 120,
+      "cancelNotice": 1
     }
   },
+  "history": [
+    {
+      "version": 1,
+      "deployedAt": "2026-11-04T11:13:57.195Z",
+      "morningLine": {
+        "production": {
+          "address": "0x53a2861c4fbc29f17885b7c3616fbcc4365ad4b3",
+          "dayLength": 86400,
+          "reportGrace": 172800
+        },
+        "demo": {
+          "address": "0xcae6005f50ada8c55e6785998aaeb22242aabdbe",
+          "dayLength": 180,
+          "reportGrace": 120
+        }
+      }
+    }
+  ],
   "fuelPerCheck": "1000000000000000000",
   "fuelSink": "0x000000000000000000000000000000000000dEaD"
 }

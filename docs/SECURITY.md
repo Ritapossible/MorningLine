@@ -5,9 +5,9 @@
 | Party | Trusted for | Cannot do |
 |---|---|---|
 | Contract | holding funds, enforcing day windows and the two destinations | anything not in its code: there is no owner, admin or upgrade |
-| Checker (per deal) | reporting present or missing, and which commit it read | send money to itself or anyone but that deal's payee and buyer; settle a day twice; act outside a day's window |
-| Buyer | choosing the payee, checker, line and price | take back a day that was already reported; reclaim before a window closes |
-| Payee (maintainer) | keeping the line up | get paid for a day reported missing or never reported |
+| Checker (per deal) | reporting present or missing, which commit it read, and the hash of the file it read | send money to itself or anyone but that deal's payee and buyer; settle a day twice; act outside a day's window |
+| Buyer | choosing the payee, checker, line and price; cancelling with notice; adding days | take back a day that was already reported or has started; cut a deal short without `cancelNotice` days of notice; reclaim before a window closes; change the line, price or payee |
+| Payee (maintainer) | keeping the line up; ending the deal early | get paid for a day reported missing or never reported; cut a day that has started |
 | GitHub | serving the same file to everyone at a given commit | (out of our control: availability, repo deletion) |
 
 ## Threats and what bounds them

@@ -35,6 +35,18 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
     ),
   },
   {
+    q: "Can a deal be cancelled or changed?",
+    a: (
+      <>
+        Its length can, its terms cannot. The sponsor can cancel: the days already started still
+        run, plus one day of notice for the maintainer, and every later day comes back at once.
+        The sponsor can also add days at the same price. The maintainer can end the deal early,
+        keeping the days already started. The line, the price and the maintainer never change; for
+        that, cancel and open a new deal.
+      </>
+    ),
+  },
+  {
     q: "What if the checker goes quiet?",
     a: (
       <>

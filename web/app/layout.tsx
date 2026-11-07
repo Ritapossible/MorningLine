@@ -29,7 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <Logo />
               </Link>
               <span className={IS_DEMO ? "net-badge demo" : "net-badge"}>
-                {IS_DEMO ? `Demo on ${chain.name}` : chain.name}
+                {IS_DEMO ? `Demo on ${chain.name} · 3-minute days` : chain.name}
               </span>
               <nav>
                 <Link href="/#how" className="nav-link">

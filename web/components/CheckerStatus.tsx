@@ -43,7 +43,7 @@ export function CheckerStatus({ className }: { className?: string }) {
     text = "Checker status unavailable";
   } else if (!status.matches) {
     cell = "reclaimed";
-    text = "The running checker is not the one this site opens deals with";
+    text = "The running checker is not set up for the contract and key this site uses";
   } else if (status.lastSuccessAt === null) {
     cell = "due";
     text = "Checker starting";

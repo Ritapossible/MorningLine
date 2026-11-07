@@ -2,7 +2,7 @@
 // browser never makes a cross-site request, and cached briefly so visitors do not each wake it.
 // Everything here is public: the checker's address, chain, and when it last ran.
 import { NextResponse } from "next/server";
-import { CHECKER, CHAIN_ID } from "../../../lib/contracts";
+import { CHECKER, CHAIN_ID, MORNINGLINE } from "../../../lib/contracts";
 
 export const revalidate = 10;
 
@@ -11,6 +11,7 @@ const HEALTH_URL = process.env.CHECKER_HEALTH_URL || "https://morningline-checke
 type Health = {
   checker: string | null;
   chainId: number | null;
+  contract?: string | null;
   lastSuccessAt: string | null;
   lastError: string | null;
   reportsSent: number;
@@ -30,7 +31,8 @@ export async function GET() {
       matches:
         h.checker !== null &&
         h.checker.toLowerCase() === CHECKER.toLowerCase() &&
-        (h.chainId === null || h.chainId === CHAIN_ID),
+        (h.chainId === null || h.chainId === CHAIN_ID) &&
+        (h.contract == null || h.contract.toLowerCase() === MORNINGLINE.toLowerCase()),
     });
   } catch {
     return NextResponse.json({ reachable: false });

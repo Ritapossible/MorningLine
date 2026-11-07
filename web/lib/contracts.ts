@@ -6,7 +6,12 @@ export const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? "84532");
 export const chain = CHAIN_ID === base.id ? base : baseSepolia;
 
 export const MORNINGLINE = (process.env.NEXT_PUBLIC_MORNINGLINE_ADDRESS ??
-  "0xcae6005f50ada8c55e6785998aaeb22242aabdbe") as `0x${string}`;
+  "0xe3b293d5b4eb9a07fd0e3c8b9fda57f7124babef") as `0x${string}`;
+
+/// The v1 contracts, before deals could be cancelled or extended. Their deals are still on chain;
+/// the site no longer opens or shows them.
+export const PREVIOUS_MORNINGLINE = "0xcae6005f50ada8c55e6785998aaeb22242aabdbe" as const;
+
 export const LINE = (process.env.NEXT_PUBLIC_LINE_ADDRESS ??
   "0x11bd55d6ef883cfd73e346034b6d90d84f2d1ff9") as `0x${string}`;
 export const USDC = (process.env.NEXT_PUBLIC_USDC_ADDRESS ??
@@ -15,6 +20,10 @@ export const USDC = (process.env.NEXT_PUBLIC_USDC_ADDRESS ??
 /// True when this deployment uses short days for demonstration. Shown on every page: a deal
 /// here settles in minutes, not days, and the money is worth nothing.
 export const IS_DEMO = (process.env.NEXT_PUBLIC_IS_DEMO ?? "true") === "true";
+
+/// Plain words for how long a day is, for every place that counts days. The demo contract has
+/// 3-minute days so a whole deal can be watched in one sitting; production days are 24 hours.
+export const DAY_WORDS = IS_DEMO ? "each day lasts 3 minutes on this demo" : "each day lasts 24 hours";
 
 /// The checker new deals are opened against. A deal's checker is fixed for its whole life.
 export const CHECKER = (process.env.NEXT_PUBLIC_CHECKER_ADDRESS ??
@@ -57,6 +66,39 @@ export const morningLineAbi = [
     ],
     outputs: [{ name: "dealId", type: "uint256" }],
   },
+  {
+    type: "function",
+    name: "cancel",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "dealId", type: "uint256" }],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "release",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "dealId", type: "uint256" }],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "extend",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "dealId", type: "uint256" },
+      { name: "extraDays", type: "uint16" },
+    ],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "daysStarted",
+    stateMutability: "view",
+    inputs: [{ name: "dealId", type: "uint256" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  { type: "function", name: "cancelNotice", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },
+  { type: "function", name: "VERSION", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },
   {
     type: "function",
     name: "reclaim",
@@ -135,6 +177,27 @@ export const morningLineAbi = [
       { name: "day", type: "uint256", indexed: true },
       { name: "present", type: "bool", indexed: false },
       { name: "commitSha", type: "bytes20", indexed: false },
+      { name: "fileHash", type: "bytes32", indexed: false },
+    ],
+  },
+  {
+    type: "event",
+    name: "DealShortened",
+    inputs: [
+      { name: "dealId", type: "uint256", indexed: true },
+      { name: "by", type: "address", indexed: true },
+      { name: "oldDayCount", type: "uint16", indexed: false },
+      { name: "newDayCount", type: "uint16", indexed: false },
+      { name: "refunded", type: "uint256", indexed: false },
+    ],
+  },
+  {
+    type: "event",
+    name: "DealExtended",
+    inputs: [
+      { name: "dealId", type: "uint256", indexed: true },
+      { name: "oldDayCount", type: "uint16", indexed: false },
+      { name: "newDayCount", type: "uint16", indexed: false },
     ],
   },
   {

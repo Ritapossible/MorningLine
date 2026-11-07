@@ -22,6 +22,7 @@ database. The checker and the web app both derive everything from chain data and
 | `fuelSink` | `0x…dEaD` (spent fuel is gone) | same |
 | `dayLength` | 1 day | 180 seconds, labelled "demo" in the UI |
 | `reportGrace` | 48 hours | 120 seconds |
+| `cancelNotice` | 1 day | 1 day (3 minutes) |
 
 No owner, no admin, no proxy. A change of any setting is a new deployment.
 
@@ -45,9 +46,12 @@ For day `d`: `opens = start + d * dayLength`, `closes = opens + dayLength + repo
 | Function | Who | Effect |
 |---|---|---|
 | `openDeal(payee, checker, dailyAmount, dayCount, start, spec)` | anyone (becomes buyer) | pulls `dailyAmount * dayCount` USDC and `dayCount * fuelPerCheck` LINE; rejects tokens that deliver less than asked |
-| `report(dealId, day, present, commitSha)` | the deal's checker | sends 1 fuel to the sink, then pays the payee (present) or refunds the buyer (missing); present requires a non-zero SHA |
+| `report(dealId, day, present, commitSha, fileHash)` | the deal's checker | sends 1 fuel to the sink, then pays the payee (present) or refunds the buyer (missing); present requires a non-zero SHA and file hash |
+| `cancel(dealId)` | the deal's buyer | ends the deal after the days already started plus `cancelNotice`; refunds every later day with its fuel |
+| `release(dealId)` | the deal's payee | ends the deal after the days already started; refunds every later day with its fuel |
+| `extend(dealId, extraDays)` | the deal's buyer | while the last day has not ended, pulls USDC and fuel for more days at the same price |
 | `reclaim(dealId, days[])` | the deal's buyer | for each listed day past its window and still open: refund its USDC and its unused fuel |
-| `getDeal`, `dayStatus`, `dayWindow`, `specHashOf` | anyone | views |
+| `getDeal`, `dayStatus`, `dayWindow`, `daysStarted`, `specHashOf` | anyone | views |
 
 ### Invariants (each has a test, see `contracts/test/`)
 1. **Fully backed:** the contract's USDC balance equals the sum over deals of
@@ -58,6 +62,9 @@ For day `d`: `opens = start + d * dayLength`, `closes = opens + dayLength + repo
    buyer's reclaim after it.
 4. **No check without fuel:** every report sends exactly `fuelPerCheck` to the sink.
 5. **Two destinations only:** deal USDC goes to that deal's payee or buyer, nowhere else.
+6. **Changing length never undoes a day:** a day can only be settled after it has started, and
+   cancel and release keep every started day, so no settled day is ever removed. The fuzzer
+   drives cancel, release and extend alongside reports and reclaims.
 
 ### Engineering notes
 - Checks, then state, then transfers; `nonReentrant` on every state-changing function.

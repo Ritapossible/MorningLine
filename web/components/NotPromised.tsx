@@ -6,9 +6,10 @@ export function NotPromised({ repo }: { repo?: string }) {
       <h3>What this does not promise</h3>
       <ul style={{ margin: 0, paddingLeft: 18, fontSize: 14 }}>
         <li style={{ marginBottom: 6 }}>
-          The commit hash proves what that commit contains. It does not prove that commit was the
-          one visitors saw that day: the checker chooses which commit to report, and anyone can
-          compare it with{" "}
+          The checker chooses which commit to read. Every reported commit is checked on the deal
+          page: it must be in the pinned branch&apos;s history, and the file at that commit must
+          match the hash recorded on chain. What cannot be proved yet is that it was the branch&apos;s
+          latest commit at that minute; anyone can compare it with{" "}
           {repo ? (
             <a href={`https://github.com/${repo}/commits`} target="_blank" rel="noreferrer">
               the public history
@@ -19,18 +20,24 @@ export function NotPromised({ repo }: { repo?: string }) {
           .
         </li>
         <li style={{ marginBottom: 6 }}>
-          Only the exact raw line in the pinned file counts. A logo hosted somewhere else can
-          disappear while the line stays, and a remote image is not covered.
+          What counts is the exact line in the pinned file, plus any image the line shows from the
+          repository itself, which must be in the same commit. Images hosted elsewhere are not
+          covered: another server can show the checker one picture and visitors another.
         </li>
         <li style={{ marginBottom: 6 }}>
-          Matching is literal text, not meaning. A reformatted line counts as missing.
+          Matching is literal text, on purpose, so there is never an argument about whether a line
+          counts. A reformatted line counts as missing.
         </li>
         <li style={{ marginBottom: 6 }}>
           There is no dispute mechanism. A dishonest checker is visible and bounded, not
-          prevented: it can only choose, per day, between paying the maintainer and refunding
-          the sponsor.
+          prevented: it can only choose, per day, between paying the maintainer and refunding the
+          sponsor.
         </li>
-        <li>If the repo is deleted, its evidence goes with it.</li>
+        <li>
+          If the repository is deleted, its commit links stop working. Each day&apos;s file hash
+          stays on chain, so anyone holding a copy of the file can still show it is the one that
+          was read.
+        </li>
       </ul>
     </section>
   );

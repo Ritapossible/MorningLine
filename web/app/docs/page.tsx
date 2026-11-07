@@ -23,6 +23,7 @@ const REPO = "https://github.com/Ritapossible/MorningLine";
 const SECTIONS = [
   ["overview", "Overview"],
   ["lifecycle", "How a deal runs"],
+  ["changing", "Changing a deal"],
   ["sponsors", "For sponsors"],
   ["maintainers", "For maintainers"],
   ["check", "The daily check"],
@@ -32,6 +33,7 @@ const SECTIONS = [
   ["contracts", "Contracts"],
   ["api", "Deal API"],
   ["limits", "Limits"],
+  ["roadmap", "Roadmap"],
   ["source", "Source and security"],
 ] as const;
 
@@ -103,12 +105,12 @@ export default function Docs() {
               </li>
               <li>
                 <b>Checked.</b> Each day has a report window. Inside it the checker reads the file
-                once and calls <code>report(dealId, day, present, commitSha)</code>.
+                once and calls <code>report(dealId, day, present, commitSha, fileHash)</code>.
               </li>
               <li>
                 <b>Settled.</b> Present sends that day&apos;s USDC to the maintainer. Missing sends
-                it back to the sponsor. Either way one LINE is spent and the commit hash is emitted
-                in a <code>DayReported</code> event.
+                it back to the sponsor. Either way one LINE is spent, and the commit hash and a hash
+                of the file read are emitted in a <code>DayReported</code> event.
               </li>
               <li>
                 <b>Reclaimed.</b> A day nobody reported can be taken back by the sponsor once its
@@ -117,6 +119,54 @@ export default function Docs() {
             </ol>
             <p>
               Each day is decided on its own and settles exactly once. Nothing is held to the end.
+            </p>
+          </section>
+
+          <section id="changing">
+            <h2>Changing a deal</h2>
+            <p>
+              A deal can change length, never terms. The line, the price and the maintainer stay as
+              opened; to change those, cancel and open a new deal. Each action is on the deal page,
+              which shows exactly which days stay and what money moves before anything is signed.
+            </p>
+            <div className="docs-scroll">
+              <table className="docs-table">
+                <thead>
+                  <tr>
+                    <th>Action</th>
+                    <th>Who</th>
+                    <th>What happens</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Cancel</td>
+                    <td>Sponsor</td>
+                    <td>
+                      The days already started still run, plus a notice period ({IS_DEMO ? "one 3-minute day on this demo deployment" : "1 day"}),
+                      so a maintainer who added the line is never cut off without notice. Every
+                      later day&apos;s USDC and LINE go back to the sponsor at once.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>End early</td>
+                    <td>Maintainer</td>
+                    <td>
+                      The days already started still run; every later day goes back to the sponsor
+                      at once. It can only cost the maintainer, so it needs no notice.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Add days</td>
+                    <td>Sponsor</td>
+                    <td>More days at the same price, locked now, while the deal is still running.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p>
+              A day can only be settled once it has started, so none of these can undo a day that
+              was already paid or refunded.
             </p>
           </section>
 
@@ -202,6 +252,15 @@ export default function Docs() {
                 two, is missing.
               </li>
               <li>A pinned line that is empty or only whitespace never matches.</li>
+              <li>
+                If the line shows an image from the repository itself, such as{" "}
+                <code>![Acme](assets/acme.png)</code> or <code>&lt;img src=&quot;/logo.svg&quot;&gt;</code>,
+                that image must be in the same commit. Paths resolve as GitHub renders them:
+                relative to the file&apos;s folder, or to the repository root with a leading slash.
+                Images on other hosts are not checked, because another server can show the checker
+                one picture and visitors another. Put the sponsor&apos;s logo in the repo to have it
+                covered.
+              </li>
             </ul>
             <p>
               The site&apos;s presence preview runs the same code as the checker. CI fails if the
@@ -277,13 +336,19 @@ export default function Docs() {
             <h2>Verify a day yourself</h2>
             <ol>
               <li>
-                On a deal page, click a settled day. It opens the commit the checker read, on
-                GitHub. Open the pinned file at that commit and search for the line.
+                Open the deal page. Its Evidence section checks every reported commit for you: that
+                it is in the pinned branch&apos;s history, and that the file at that commit matches
+                the hash recorded on chain.
+              </li>
+              <li>
+                Click a settled day. It opens the commit the checker read, on GitHub. Open the
+                pinned file at that commit and search for the line.
               </li>
               <li>
                 The day also links to its transaction on the block explorer. Its{" "}
-                <code>DayReported</code> event holds the same commit hash, and whether the line was
-                found.
+                <code>DayReported</code> event holds the same commit hash, the file hash, and
+                whether the line was found. The file hash is <code>keccak256</code> of the file&apos;s
+                text, so it still proves which file was read if the repository is later deleted.
               </li>
               <li>
                 Compare the commit with the branch history. The hash proves what that commit
@@ -353,9 +418,21 @@ const status = await client.readContract({
                   </tr>
                   <tr>
                     <td>
-                      <code>report(dealId, day, present, commitSha)</code>
+                      <code>report(dealId, day, present, commitSha, fileHash)</code>
                     </td>
                     <td>Checker only, inside the day&apos;s window</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <code>cancel(dealId)</code>, <code>extend(dealId, extraDays)</code>
+                    </td>
+                    <td>Sponsor only</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <code>release(dealId)</code>
+                    </td>
+                    <td>Maintainer only</td>
                   </tr>
                   <tr>
                     <td>
@@ -366,7 +443,8 @@ const status = await client.readContract({
                   <tr>
                     <td>
                       <code>getDeal(dealId)</code>, <code>dayStatus(dealId, day)</code>,{" "}
-                      <code>dayWindow(dealId, day)</code>, <code>dealCount()</code>
+                      <code>dayWindow(dealId, day)</code>, <code>daysStarted(dealId)</code>,{" "}
+                      <code>dealCount()</code>, <code>cancelNotice()</code>
                     </td>
                     <td>Views</td>
                   </tr>
@@ -380,10 +458,15 @@ const status = await client.readContract({
                 when a deal is opened
               </li>
               <li>
-                <code>DayReported(dealId, day, present, commitSha)</code> when a day is checked
+                <code>DayReported(dealId, day, present, commitSha, fileHash)</code> when a day is
+                checked
               </li>
               <li>
                 <code>DayReclaimed(dealId, day)</code> when a day is taken back
+              </li>
+              <li>
+                <code>DealShortened(dealId, by, oldDayCount, newDayCount, refunded)</code> and{" "}
+                <code>DealExtended(dealId, oldDayCount, newDayCount)</code> when its length changes
               </li>
             </ul>
           </section>
@@ -399,8 +482,8 @@ const status = await client.readContract({
   "dealId": "1",
   "spec": { "repo": "owner/name", "branch": "main", "path": "README.md", "line": "…" },
   "reports": [
-    { "day": 0, "present": true, "sha": "0xd606…", "tx": "0xb06d…" },
-    { "day": 1, "present": null, "sha": null, "tx": "0x…" }
+    { "day": 0, "present": true, "sha": "0xd606…", "fileHash": "0x8c1f…", "tx": "0xb06d…" },
+    { "day": 1, "present": null, "sha": null, "fileHash": null, "tx": "0x…" }
   ],
   "openedBlock": "54346255",
   "truncated": false
@@ -423,6 +506,29 @@ const status = await client.readContract({
             <h2>Limits</h2>
             <p>Shown on every deal page as well.</p>
             <NotPromised />
+          </section>
+
+          <section id="roadmap">
+            <h2>Roadmap</h2>
+            <p>What would close the remaining limits, in the order it is planned:</p>
+            <ol>
+              <li>
+                <b>Several independent checkers.</b> A deal names three checkers and a day settles
+                when two agree, so no single operator decides a day.
+              </li>
+              <li>
+                <b>Proof of what GitHub returned.</b> A zkTLS proof of the GitHub response, checked
+                by the contract, would show both the file and that its commit was the branch&apos;s
+                latest at that moment. The checker would then need no trust at all.
+              </li>
+              <li>
+                <b>Archived copies.</b> The checker keeps each file it reads in public storage under
+                its hash, so the evidence is readable, not just provable, after a repository is gone.
+              </li>
+              <li>
+                <b>Base mainnet</b>, with real USDC, after an external review of the contracts.
+              </li>
+            </ol>
           </section>
 
           <section id="source">

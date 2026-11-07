@@ -6,13 +6,15 @@ import { DayStrip, type DayCell } from "../../../components/DayStrip";
 import { NotPromised } from "../../../components/NotPromised";
 import { CheckerNotice } from "../../../components/CheckerNotice";
 import { Wallet } from "../../../components/Wallet";
+import { ManageDeal } from "../../../components/ManageDeal";
+import { verifyReport, type Verdict } from "../../../lib/verify";
 import { useWrite } from "../../../lib/useWrite";
-import { MORNINGLINE, addressUrl, morningLineAbi, txUrl } from "../../../lib/contracts";
+import { DAY_WORDS, IS_DEMO, MORNINGLINE, PREVIOUS_MORNINGLINE, addressUrl, morningLineAbi, txUrl } from "../../../lib/contracts";
 import { blobUrl, fileAtCommit, latestCommit } from "../../../lib/github";
 import { linePresent } from "../../../lib/match";
 import { duration, shortAddress, timestamp, untilText, usd } from "../../../lib/format";
 
-type Report = { day: number; present: boolean | null; sha: string | null; tx: string };
+type Report = { day: number; present: boolean | null; sha: string | null; fileHash: string | null; tx: string };
 type Api = {
   spec: { repo: string; branch: string; path: string; line: string } | null;
   reports: Report[];
@@ -39,6 +41,11 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
   });
   const { data: dayLength } = useReadContract({ address: MORNINGLINE, abi: morningLineAbi, functionName: "dayLength" });
   const { data: reportGrace } = useReadContract({ address: MORNINGLINE, abi: morningLineAbi, functionName: "reportGrace" });
+  const { data: cancelNotice } = useReadContract({ address: MORNINGLINE, abi: morningLineAbi, functionName: "cancelNotice" });
+  const { data: fuelPerCheck } = useReadContract({ address: MORNINGLINE, abi: morningLineAbi, functionName: "fuelPerCheck" });
+  const { data: started, refetch: refetchStarted } = useReadContract({
+    address: MORNINGLINE, abi: morningLineAbi, functionName: "daysStarted", args: [dealId],
+  });
 
   const dayCount = deal ? Number(deal.dayCount) : 0;
 
@@ -64,7 +71,10 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
     return () => { alive = false; clearInterval(t); };
   }, [id]);
 
-  // Is the line there at this moment? Uses the same rule that settles days.
+  // Is the line there at this moment? Uses the same rule that settles days. Keyed on the spec's
+  // content, not the object: the API is polled every 10 seconds and returns a fresh object each
+  // time, which would re-read GitHub and exhaust its 60-an-hour limit for visitors.
+  const specKey = api?.spec ? JSON.stringify(api.spec) : "";
   useEffect(() => {
     const spec = api?.spec;
     if (!spec) return;
@@ -81,7 +91,30 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
       }
     })();
     return () => { alive = false; };
-  }, [api?.spec]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [specKey]);
+
+  // Audit every reported commit against GitHub: in the branch's history, and the file matches the
+  // hash on chain. One check per distinct commit; consecutive days usually share one.
+  const [verdicts, setVerdicts] = useState<Record<string, Verdict>>({});
+  useEffect(() => {
+    const spec = api?.spec;
+    if (!spec) return;
+    let alive = true;
+    for (const r of api?.reports ?? []) {
+      if (!r.sha || /^0x0+$/.test(r.sha)) continue;
+      const key = `${r.sha}|${r.fileHash ?? ""}`;
+      if (verdicts[key]) continue;
+      verifyReport(spec.repo, spec.branch, spec.path, r.sha, r.fileHash).then((v) => {
+        if (alive) setVerdicts((all) => ({ ...all, [key]: v }));
+      });
+    }
+    return () => {
+      alive = false;
+    };
+    // verdicts is only read to skip work already done
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [api]);
 
   const byDay = useMemo(() => {
     const m = new Map<number, Report>();
@@ -109,7 +142,20 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
   }, [deal, dayLength, reportGrace, dayCount, statuses, byDay, now]);
 
   if (!deal || deal.buyer === "0x0000000000000000000000000000000000000000") {
-    return <p className="small">No deal number {id} on this deployment.</p>;
+    return (
+      <>
+        <h1>Deal {id}</h1>
+        <p className="lede">There is no deal number {id} on the current contract.</p>
+        <p className="small">
+          Deals opened before 7 November 2026 live on the{" "}
+          <a href={addressUrl(PREVIOUS_MORNINGLINE)} target="_blank" rel="noreferrer">
+            previous contract
+          </a>
+          , which did not yet support cancelling or adding days. They are still on chain and
+          settled by its rules.
+        </p>
+      </>
+    );
   }
 
   const paid = cells.filter((c) => c.state === "paid").length;
@@ -171,6 +217,10 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
 
       <section className="card" style={{ marginTop: 18 }}>
         <h3>Days</h3>
+        <p className="small" style={{ marginTop: -4 }}>
+          {DAY_WORDS.charAt(0).toUpperCase() + DAY_WORDS.slice(1)}
+          {IS_DEMO ? ", so a whole deal plays out in minutes. The production contract uses 24-hour days." : "."}
+        </p>
         <DayStrip cells={cells} repo={spec?.repo ?? ""} now={now} />
         {api?.truncated ? (
           <p className="notice warn" style={{ marginTop: 14 }}>
@@ -221,6 +271,26 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
         </section>
       ) : null}
 
+      {dayLength !== undefined && cancelNotice !== undefined && fuelPerCheck !== undefined && started !== undefined ? (
+        <ManageDeal
+          dealId={dealId}
+          deal={{
+            buyer: deal.buyer,
+            payee: deal.payee,
+            start: Number(deal.start),
+            dayCount,
+            dailyAmount: deal.dailyAmount,
+          }}
+          address={address}
+          daysStarted={Number(started)}
+          cancelNotice={Number(cancelNotice)}
+          dayLength={dayLength}
+          fuelPerCheck={fuelPerCheck}
+          now={now}
+          onDone={() => Promise.all([refetchDeal(), refetchStatuses(), refetchStarted()])}
+        />
+      ) : null}
+
       <section className="card" style={{ marginTop: 18 }}>
         <h3>Terms</h3>
         <dl className="kv">
@@ -240,6 +310,12 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
       {api?.reports && api.reports.length > 0 ? (
         <section className="card" style={{ marginTop: 18 }}>
           <h3>Evidence</h3>
+          <p className="small">
+            Each report names the commit the checker read and a hash of the file. This page checks
+            both against GitHub for you: the commit must be in the history of{" "}
+            <span className="mono">{spec?.branch ?? "the branch"}</span>, and the file at that commit
+            must match the hash recorded on chain.
+          </p>
           <dl className="kv">
             {[...api.reports].sort((a, b) => a.day - b.day).map((r) => (
               <div key={`${r.day}-${r.tx}`} style={{ display: "contents" }}>
@@ -264,6 +340,9 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
                       <a href={txUrl(r.tx)} target="_blank" rel="noreferrer">tx {shortAddress(r.tx)}</a>
                     </>
                   ) : null}
+                  {r.sha && !/^0x0+$/.test(r.sha) ? (
+                    <VerdictLine verdict={verdicts[`${r.sha}|${r.fileHash ?? ""}`]} branch={spec?.branch ?? ""} />
+                  ) : null}
                 </dd>
               </div>
             ))}
@@ -281,5 +360,37 @@ export default function DealPage({ params }: { params: Promise<{ id: string }> }
           : null}
       </p>
     </>
+  );
+}
+
+/// The browser's own check of one report, in plain words.
+function VerdictLine({ verdict, branch }: { verdict: Verdict | undefined; branch: string }) {
+  if (verdict === undefined) return <span className="verdict">Checking against GitHub…</span>;
+  const parts: { ok: boolean | null; text: string }[] = [
+    {
+      ok: verdict.inHistory,
+      text:
+        verdict.inHistory === true
+          ? `in ${branch}'s history`
+          : verdict.inHistory === false
+            ? `not in ${branch}'s history`
+            : "history not checked (GitHub busy)",
+    },
+  ];
+  if (verdict.fileMatches !== null) {
+    parts.push({
+      ok: verdict.fileMatches,
+      text: verdict.fileMatches ? "file matches the hash on chain" : "file does not match the hash on chain",
+    });
+  }
+  return (
+    <span className="verdict">
+      {parts.map((p, i) => (
+        <span key={i} className={p.ok === false ? "bad" : p.ok === true ? "good" : ""}>
+          {p.ok === true ? "✓ " : p.ok === false ? "✗ " : ""}
+          {p.text}
+        </span>
+      ))}
+    </span>
   );
 }

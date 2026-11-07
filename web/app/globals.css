@@ -1345,6 +1345,42 @@ a.day:hover {
   margin: 0;
 }
 
+.manage-block {
+  padding-top: 16px;
+  margin-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.manage-block h4 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+button.danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+.verdict {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 4px;
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.verdict .good {
+  color: var(--ok);
+}
+
+.verdict .bad {
+  color: var(--danger);
+}
+
 /* ------------------------------------------------------------------- steps */
 
 .steps {

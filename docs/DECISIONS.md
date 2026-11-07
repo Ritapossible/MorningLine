@@ -98,3 +98,22 @@ signer is an embedded wallet, and through wagmi otherwise.
 **Cost:** the flag must match the dashboard (sponsorship on, chain selected, client
 transactions allowed), or sponsored sends fail. Sponsored gas is paid from Privy credits.
 External wallets still pay their own gas.
+
+### D17 - Deals can change length, never terms (2026-11-07)
+**Why:** a deal that can never be cancelled or extended is too rigid for real use, but a sponsor
+who can pull the money at any moment turns the maintainer's work back into trust. v2 gives each
+side the power that cannot hurt the other: the buyer can cancel, which keeps every started day
+plus `cancelNotice` more; the payee can release, which keeps every started day; the buyer can
+extend at the same price while the deal runs. The line, price and payee never change: changing
+them mid-deal is what escrow exists to prevent, so that is a cancel and a new deal.
+**Cost:** a new deployment, since the contracts have no upgrade path. Deals 1 to 6 stay on the v1
+contract and are no longer shown by the site.
+
+### D18 - Evidence that survives the repository, and is checked for you (2026-11-07)
+**Why:** "anyone can compare the commit with the history" was true but asked too much of anyone.
+Every report now carries the keccak256 of the file text it read, and the deal page checks each
+reported commit itself: it must be in the pinned branch's history, and the file at that commit
+must hash to the value on chain. A repo image the line shows must be in the same commit.
+**Cost:** one GitHub API call per distinct commit for each visitor, plus a raw file fetch that
+does not count against the API limit. What still cannot be shown is that the commit was the
+branch head at the minute of the check; that needs a proof of the GitHub response (roadmap).
