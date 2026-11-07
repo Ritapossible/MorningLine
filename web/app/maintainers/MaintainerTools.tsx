@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { useAccount, useReadContract, useReadContracts } from "wagmi";
 import { MORNINGLINE, morningLineAbi } from "../../lib/contracts";
 import { usd } from "../../lib/format";
-import { defaultBranch, fileAtCommit, GitHubError, latestCommit, parseRepo } from "../../lib/github";
+import { findFile, GitHubError, latestCommit, parseRepo, resolveBranch } from "../../lib/github";
 import { linePresent } from "../../lib/match";
 
 const ADDRESS = /^0x[0-9a-fA-F]{40}$/;
@@ -53,20 +53,22 @@ function SponsorLink() {
 
     setChecking(true);
     try {
-      const b = branch.trim() === "" ? await defaultBranch(repo) : branch.trim();
+      const b = await resolveBranch(repo, branch);
       const head = await latestCommit(repo, b);
-      const body = await fileAtCommit(repo, path.trim(), head);
-      if (body === null) {
+      const found = await findFile(repo, path, head);
+      if (found === null) {
         setError(`There is no ${path.trim()} on ${b}.`);
-      } else if (!linePresent(body, line)) {
+      } else if (!linePresent(found.body, line)) {
         setError(
-          `That line is not in ${path.trim()} on ${b} right now. Add it exactly as written, commit, then try again.`,
+          `That line is not in ${found.path} on ${b} right now. Add it exactly as written, commit, then try again.`,
         );
       } else {
+        setBranch(b);
+        setPath(found.path);
         const q = new URLSearchParams({
           repo,
           branch: b,
-          path: path.trim(),
+          path: found.path,
           line,
           payee: payeeValue,
           price: price.trim(),
@@ -97,6 +99,9 @@ function SponsorLink() {
         <span>Repository</span>
         <input
           type="text"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           placeholder="owner/name, or the GitHub URL"
           value={repoInput}
           onChange={(e) => setRepoInput(e.target.value)}
@@ -107,11 +112,11 @@ function SponsorLink() {
           <span>
             Branch <span className="hint">(blank for the default)</span>
           </span>
-          <input type="text" placeholder="main" value={branch} onChange={(e) => setBranch(e.target.value)} />
+          <input type="text" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="main" value={branch} onChange={(e) => setBranch(e.target.value)} />
         </label>
         <label className="field">
           <span>File</span>
-          <input type="text" value={path} onChange={(e) => setPath(e.target.value)} />
+          <input type="text" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={path} onChange={(e) => setPath(e.target.value)} />
         </label>
       </div>
       <label className="field">
@@ -120,6 +125,9 @@ function SponsorLink() {
         </span>
         <input
           type="text"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           className="mono"
           placeholder="Sponsored by [Acme](https://acme.xyz)"
           value={line}
@@ -132,6 +140,9 @@ function SponsorLink() {
         </span>
         <input
           type="text"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           placeholder={address ?? "0x"}
           value={payee}
           onChange={(e) => setPayee(e.target.value)}
@@ -142,7 +153,7 @@ function SponsorLink() {
           <span>
             Price per day <span className="hint">(USDC)</span>
           </span>
-          <input type="text" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
+          <input type="text" autoCapitalize="none" autoCorrect="off" spellCheck={false} inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
         </label>
         <label className="field">
           <span>
@@ -211,7 +222,7 @@ function YourDeals() {
       <h3>Your deals</h3>
       <label className="field">
         <span>Your address on Base</span>
-        <input type="text" placeholder={address ?? "0x"} value={input} onChange={(e) => setInput(e.target.value)} />
+        <input type="text" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder={address ?? "0x"} value={input} onChange={(e) => setInput(e.target.value)} />
       </label>
       {!valid ? (
         <p className="small" style={{ marginBottom: 0 }}>

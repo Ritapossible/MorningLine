@@ -23,7 +23,7 @@ import {
   faucetAbi,
   morningLineAbi,
 } from "../../lib/contracts";
-import { defaultBranch, fileAtCommit, GitHubError, latestCommit, parseRepo } from "../../lib/github";
+import { findFile, GitHubError, latestCommit, parseRepo, resolveBranch } from "../../lib/github";
 import { linePresent, normalize, normalizeLines } from "../../lib/match";
 import { Wallet } from "../../components/Wallet";
 import { useWrite } from "../../lib/useWrite";
@@ -137,18 +137,20 @@ export default function NewDeal() {
     }
     setLoading(true);
     try {
-      const b = branch.trim() === "" ? await defaultBranch(parsed) : branch.trim();
+      const b = await resolveBranch(parsed, branch);
       const head = await latestCommit(parsed, b);
-      const body = await fileAtCommit(parsed, path.trim(), head);
-      if (body === null) {
+      const found = await findFile(parsed, path, head);
+      if (found === null) {
         setLoadError(`There is no ${path.trim()} at the latest commit of ${b}.`);
         setLoading(false);
         return;
       }
+      // Pin the names exactly as GitHub spells them, since that is what the checker reads.
       setRepo(parsed);
       setBranch(b);
+      setPath(found.path);
       setSha(head);
-      const fileLines = normalizeLines(body);
+      const fileLines = normalizeLines(found.body);
       setLines(fileLines);
       if (wantLine.current !== null) {
         const want = normalize(wantLine.current);
@@ -268,6 +270,9 @@ export default function NewDeal() {
           <span>Repository</span>
           <input
             type="text"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
             placeholder="owner/name, or the GitHub URL"
             value={repoInput}
             onChange={(e) => setRepoInput(e.target.value)}
@@ -276,11 +281,11 @@ export default function NewDeal() {
         <div className="grid-2">
           <label className="field">
             <span>Branch <span className="hint">(blank for the default)</span></span>
-            <input type="text" placeholder="main" value={branch} onChange={(e) => setBranch(e.target.value)} />
+            <input type="text" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="main" value={branch} onChange={(e) => setBranch(e.target.value)} />
           </label>
           <label className="field">
             <span>File</span>
-            <input type="text" value={path} onChange={(e) => setPath(e.target.value)} />
+            <input type="text" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={path} onChange={(e) => setPath(e.target.value)} />
           </label>
         </div>
         <div className="row">
@@ -336,7 +341,7 @@ export default function NewDeal() {
           <h3>3. Terms</h3>
           <label className="field">
             <span>Maintainer address <span className="hint">(who gets paid for a day that holds)</span></span>
-            <input type="text" placeholder="0x" value={payee} onChange={(e) => setPayee(e.target.value)} />
+            <input type="text" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="0x" value={payee} onChange={(e) => setPayee(e.target.value)} />
           </label>
           {payee.trim() !== "" && !payeeOk ? (
             <p className="notice warn">That is not a 20 byte address.</p>
@@ -344,7 +349,7 @@ export default function NewDeal() {
           <div className="grid-2">
             <label className="field">
               <span>Price per day <span className="hint">(USDC)</span></span>
-              <input type="text" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
+              <input type="text" autoCapitalize="none" autoCorrect="off" spellCheck={false} inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
             </label>
             <label className="field">
               <span>Days <span className="hint">(1 to 366)</span></span>

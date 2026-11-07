@@ -238,9 +238,15 @@ strong {
 
 @media (max-width: 760px) {
   .masthead .nav-link,
-  .masthead .net-badge {
+  .masthead .net-badge,
+  .masthead nav button {
     display: none;
   }
+}
+
+.wordmark,
+.masthead nav .nav-cta {
+  white-space: nowrap;
 }
 
 /* ------------------------------------------------------------------ pieces */
