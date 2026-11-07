@@ -12,7 +12,7 @@ sleeps for even a few minutes lets days lapse.
 
 | Variable | What it is | Where it comes from |
 |---|---|---|
-| `CHECKER_PRIVATE_KEY` | The key that signs reports. **Secret.** | The wallet whose address is `NEXT_PUBLIC_CHECKER_ADDRESS` in Vercel (`0x84c8…343C`). It needs a little ETH on the chain for gas, nothing else. |
+| `CHECKER_PRIVATE_KEY` | The key that signs reports. **Secret.** | The wallet whose address the site opens deals against (`CHECKER` in `web/lib/contracts.ts`). It needs a little ETH on the chain for gas, nothing else. See below to make one. |
 | `CHECK_SEED` | 32 random bytes that make the check minute unpredictable. **Secret.** Keep the same value forever. | `openssl rand -hex 32`, then put `0x` in front. |
 | `GITHUB_TOKEN` | Read-only access to public repos, for a higher rate limit. **Secret.** | GitHub > Settings > Developer settings > Fine-grained tokens > Generate. Repository access: *Public repositories*. No permissions. |
 | `RPC_URL` | A Base RPC endpoint. | `https://sepolia.base.org` works; a free Alchemy or Coinbase Developer Platform endpoint is more reliable. |
@@ -20,9 +20,25 @@ sleeps for even a few minutes lets days lapse.
 | `START_BLOCK` | First block to read. Deals opened before it are ignored. | A recent block; `55572000` for the demo deployment. |
 | `POLL_INTERVAL_MS` | How often to look. | `20000` for the demo deployment, `600000` for 24-hour days. |
 
-If the checker key is lost, make a new wallet, fund it, use its key here and set its address as
-`NEXT_PUBLIC_CHECKER_ADDRESS` in Vercel. New deals use the new checker; old deals keep the one
-they were opened with, because a deal's checker can never change.
+## Making a checker wallet
+
+The checker needs its own wallet, used for nothing else, holding only a little gas.
+
+1. In MetaMask (mobile or browser): account menu > **Add account** > **Create a new account**.
+   Name it "Morning Line checker".
+2. Copy its **address**. The address is public: it goes into the site (step 4).
+3. Account menu > **Account details** > **Show private key**, enter your password, copy it. This
+   is the only secret: it goes into Render's `CHECKER_PRIVATE_KEY` field and nowhere else.
+4. Set the address as the checker: either `NEXT_PUBLIC_CHECKER_ADDRESS` in Vercel and redeploy, or
+   change the default `CHECKER` in `web/lib/contracts.ts`.
+5. Send it a little ETH on the chain (for Base Sepolia, any Base Sepolia faucet). 0.01 ETH covers
+   hundreds of reports.
+
+If a checker key is ever lost, do the same with a new wallet and add the old address to
+`RETIRED_CHECKERS` in `web/lib/contracts.ts`. While the configured checker is retired the site
+refuses to open deals, so nobody funds a deal no one will check. Old deals keep the checker they
+were opened with, because a deal's checker can never change; any day it no longer reports goes
+back to the sponsor once its window closes.
 
 Never commit any of these, never paste them in chat or an issue, and never log them. The checker
 itself never prints them.

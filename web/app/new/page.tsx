@@ -14,6 +14,8 @@ import {
   CHAIN_ID,
   IS_DEMO,
   LINE,
+  CHECKER,
+  CHECKER_RETIRED,
   MORNINGLINE,
   USDC,
   USDC_IS_FAUCET,
@@ -31,8 +33,6 @@ import { usd } from "../../lib/format";
 /// mine, so day 0 always begins a minute out.
 const START_BUFFER = 60n;
 
-const CHECKER = (process.env.NEXT_PUBLIC_CHECKER_ADDRESS ??
-  "0x84c85b69a52EA047C168cDcA87496C884531343C") as `0x${string}`;
 
 export default function NewDeal() {
   const router = useRouter();
@@ -321,7 +321,13 @@ export default function NewDeal() {
         <section className="card" style={{ marginTop: 18 }}>
           <h3>4. Sign</h3>
 
-          {!isConnected || wrongChain ? (
+          {CHECKER_RETIRED ? (
+            <p className="notice warn">
+              Opening deals is paused while the checker is replaced. A deal opened now would name a
+              checker that is no longer running, so nobody would report its days. Existing deals
+              are not affected.
+            </p>
+          ) : !isConnected || wrongChain ? (
             <>
               <p className="small">
                 {!isConnected

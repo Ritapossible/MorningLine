@@ -1,13 +1,13 @@
 import { classifyChecker } from "../lib/checker";
+import { CHECKER, RETIRED_CHECKERS } from "../lib/contracts";
 
 /// Renders the finding from classifyChecker, which carries the reasoning and the tests.
-const PUBLISHED = (process.env.NEXT_PUBLIC_CHECKER_ADDRESS ??
-  "0x84c85b69a52EA047C168cDcA87496C884531343C") as `0x${string}`;
+
 
 type Props = { checker: string; buyer: string; payee: string };
 
 export function CheckerNotice({ checker, buyer, payee }: Props) {
-  const kind = classifyChecker(checker, buyer, payee, PUBLISHED);
+  const kind = classifyChecker(checker, buyer, payee, CHECKER, RETIRED_CHECKERS);
 
   if (kind === "payee") {
     return (
@@ -53,6 +53,16 @@ export function CheckerNotice({ checker, buyer, payee }: Props) {
           vouches for it either. Judge the reports on the commits they name.
         </p>
       </section>
+    );
+  }
+
+  if (kind === "retired") {
+    return (
+      <p className="small" style={{ marginTop: 14 }}>
+        Opened with an earlier Morning Line checker, which has since been retired. It is neither
+        the sponsor nor the maintainer. Any day it no longer reports goes back to the sponsor once
+        its window closes.
+      </p>
     );
   }
 

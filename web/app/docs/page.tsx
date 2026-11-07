@@ -9,6 +9,7 @@ import {
   MORNINGLINE,
   USDC,
   USDC_IS_FAUCET,
+  CHECKER,
 } from "../../lib/contracts";
 
 export const metadata: Metadata = {
@@ -18,8 +19,6 @@ export const metadata: Metadata = {
 };
 
 const REPO = "https://github.com/Ritapossible/MorningLine";
-const CHECKER = (process.env.NEXT_PUBLIC_CHECKER_ADDRESS ??
-  "0x84c85b69a52EA047C168cDcA87496C884531343C") as `0x${string}`;
 
 const SECTIONS = [
   ["overview", "Overview"],

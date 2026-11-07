@@ -16,6 +16,16 @@ export const USDC = (process.env.NEXT_PUBLIC_USDC_ADDRESS ??
 /// here settles in minutes, not days, and the money is worth nothing.
 export const IS_DEMO = (process.env.NEXT_PUBLIC_IS_DEMO ?? "true") === "true";
 
+/// The checker new deals are opened against. A deal's checker is fixed for its whole life.
+export const CHECKER = (process.env.NEXT_PUBLIC_CHECKER_ADDRESS ??
+  "0x84c85b69a52EA047C168cDcA87496C884531343C") as `0x${string}`;
+
+/// Checkers this site ran before. Their deals are still ours and shown as such, but no new deal
+/// may name one: a retired checker's key is gone, so nobody would report its days.
+export const RETIRED_CHECKERS: readonly string[] = ["0x84c85b69a52EA047C168cDcA87496C884531343C"];
+
+export const CHECKER_RETIRED = RETIRED_CHECKERS.some((a) => a.toLowerCase() === CHECKER.toLowerCase());
+
 /// Whether the configured USDC is our own faucet token rather than real USDC.
 export const USDC_IS_FAUCET = (process.env.NEXT_PUBLIC_USDC_IS_FAUCET ?? "true") === "true";
 

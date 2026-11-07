@@ -12,19 +12,21 @@
 /// Because the buyer chooses the checker, the second is the likelier one, and it harms the
 /// side that had no say. Deals opened through this app always use the published checker, but
 /// anyone can call the contract directly, so a deal page has to say which case it is showing.
-export type CheckerKind = "payee" | "buyer" | "unfamiliar" | "published";
+export type CheckerKind = "payee" | "buyer" | "unfamiliar" | "published" | "retired";
 
 export function classifyChecker(
   checker: string,
   buyer: string,
   payee: string,
   published: string,
+  retired: readonly string[] = [],
 ): CheckerKind {
   const c = checker.toLowerCase();
   // Self dealing first: it is the finding that changes how the days should be read, and it
   // stays true even when the self dealer is also the published checker.
   if (c === payee.toLowerCase()) return "payee";
   if (c === buyer.toLowerCase()) return "buyer";
-  if (c !== published.toLowerCase()) return "unfamiliar";
-  return "published";
+  if (c === published.toLowerCase()) return "published";
+  if (retired.some((r) => r.toLowerCase() === c)) return "retired";
+  return "unfamiliar";
 }

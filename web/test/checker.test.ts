@@ -20,6 +20,16 @@ describe("classifyChecker", () => {
     assert.equal(classifyChecker(BUYER, BUYER, PAYEE, PUBLISHED), "buyer");
   });
 
+  it("recognises a checker this site ran before", () => {
+    const OLD = "0x1111111111111111111111111111111111111111";
+    assert.equal(classifyChecker(OLD, BUYER, PAYEE, PUBLISHED, [OLD.toUpperCase().replace("0X", "0x")]), "retired");
+    assert.equal(classifyChecker(OLD, BUYER, PAYEE, PUBLISHED), "unfamiliar");
+  });
+
+  it("still reports self dealing by a retired checker", () => {
+    assert.equal(classifyChecker(BUYER, BUYER, PAYEE, PUBLISHED, [BUYER]), "buyer");
+  });
+
   it("notes a checker nobody here runs", () => {
     assert.equal(classifyChecker(THIRD, BUYER, PAYEE, PUBLISHED), "unfamiliar");
   });
