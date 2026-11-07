@@ -21,6 +21,17 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        {/* A refresh starts at the top of the page. Browsers restore the old scroll position on
+            reload by default; back and forward keep doing that, and a link to a section such as
+            /#how still lands on it. Runs before first paint, so nothing jumps. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var n=performance.getEntriesByType('navigation')[0];if(n&&n.type==='reload'&&!location.hash){history.scrollRestoration='manual';window.scrollTo(0,0);addEventListener('load',function(){window.scrollTo({top:0,left:0,behavior:'instant'});setTimeout(function(){history.scrollRestoration='auto'},0)})}}catch(e){}",
+          }}
+        />
+      </head>
       <body>
         <Providers>
           <header className="masthead">
