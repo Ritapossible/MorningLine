@@ -7,7 +7,7 @@
 // Every action says, before it is signed, exactly which days stay and what money moves.
 import { useState } from "react";
 import { usePublicClient, useReadContract } from "wagmi";
-import { LINE, MORNINGLINE, USDC, erc20Abi, morningLineAbi } from "../lib/contracts";
+import { LINE, USDC, erc20Abi, morningLineAbi } from "../lib/contracts";
 import { usd } from "../lib/format";
 import { useWrite } from "../lib/useWrite";
 import { Wallet } from "./Wallet";
@@ -21,6 +21,7 @@ type Deal = {
 };
 
 export function ManageDeal({
+  contract,
   dealId,
   deal,
   address,
@@ -31,6 +32,7 @@ export function ManageDeal({
   now,
   onDone,
 }: {
+  contract: `0x${string}`;
   dealId: bigint;
   deal: Deal;
   address: string | undefined;
@@ -60,12 +62,12 @@ export function ManageDeal({
 
   const { data: usdcAllow, refetch: refetchUsdc } = useReadContract({
     address: USDC, abi: erc20Abi, functionName: "allowance",
-    args: address ? [address as `0x${string}`, MORNINGLINE] : undefined,
+    args: address ? [address as `0x${string}`, contract] : undefined,
     query: { enabled: isBuyer },
   });
   const { data: lineAllow, refetch: refetchLine } = useReadContract({
     address: LINE, abi: erc20Abi, functionName: "allowance",
-    args: address ? [address as `0x${string}`, MORNINGLINE] : undefined,
+    args: address ? [address as `0x${string}`, contract] : undefined,
     query: { enabled: isBuyer },
   });
   const needUsdc = (usdcAllow ?? 0n) < extendUsdc;
@@ -138,7 +140,7 @@ export function ManageDeal({
                     className="danger"
                     disabled={busy !== null}
                     onClick={() =>
-                      send("cancel", { address: MORNINGLINE, abi: morningLineAbi, functionName: "cancel", args: [dealId] })
+                      send("cancel", { address: contract, abi: morningLineAbi, functionName: "cancel", args: [dealId] })
                     }
                   >
                     {busy === "cancel" ? "Cancelling" : `Yes, end after day ${keepAfterCancel}`}
@@ -183,7 +185,7 @@ export function ManageDeal({
                 <button
                   disabled={busy !== null || extraDays === 0 || !needUsdc}
                   onClick={() =>
-                    send("usdc", { address: USDC, abi: erc20Abi, functionName: "approve", args: [MORNINGLINE, extendUsdc] }, refetchUsdc)
+                    send("usdc", { address: USDC, abi: erc20Abi, functionName: "approve", args: [contract, extendUsdc] }, refetchUsdc)
                   }
                 >
                   {busy === "usdc" ? "Approving" : needUsdc ? "Approve USDC" : "USDC approved"}
@@ -191,7 +193,7 @@ export function ManageDeal({
                 <button
                   disabled={busy !== null || extraDays === 0 || !needLine}
                   onClick={() =>
-                    send("line", { address: LINE, abi: erc20Abi, functionName: "approve", args: [MORNINGLINE, extendFuel] }, refetchLine)
+                    send("line", { address: LINE, abi: erc20Abi, functionName: "approve", args: [contract, extendFuel] }, refetchLine)
                   }
                 >
                   {busy === "line" ? "Approving" : needLine ? "Approve LINE" : "LINE approved"}
@@ -201,7 +203,7 @@ export function ManageDeal({
                   disabled={busy !== null || extraDays === 0 || needUsdc || needLine}
                   onClick={() =>
                     send("extend", {
-                      address: MORNINGLINE, abi: morningLineAbi, functionName: "extend", args: [dealId, extraDays],
+                      address: contract, abi: morningLineAbi, functionName: "extend", args: [dealId, extraDays],
                     })
                   }
                 >
@@ -238,7 +240,7 @@ export function ManageDeal({
                     className="danger"
                     disabled={busy !== null}
                     onClick={() =>
-                      send("release", { address: MORNINGLINE, abi: morningLineAbi, functionName: "release", args: [dealId] })
+                      send("release", { address: contract, abi: morningLineAbi, functionName: "release", args: [dealId] })
                     }
                   >
                     {busy === "release" ? "Ending" : "Yes, end the deal"}

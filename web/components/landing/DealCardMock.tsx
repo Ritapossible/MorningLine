@@ -11,9 +11,9 @@ export function DealCardMock() {
   const back = days.filter((d) => d === "refunded").length;
 
   return (
-    <div className="night-card" role="img" aria-label="Example deal card">
+    <div className="night-card" role="img" aria-label="Illustration of a deal, not a real deal">
       <div className="night-top">
-        <span className="night-id">Example deal 7</span>
+        <span className="night-id">Illustration, not a real deal</span>
         <span className="night-status">
           <i className="cell" aria-hidden="true" />
           Paying daily

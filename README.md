@@ -93,6 +93,11 @@ More detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 | Demo USDC (faucet) | `0xb997cef9a60b8d6f2f3e9dbc42a769dd4fcc2632` |
 | Checker | `0xf0A44A43F5CE37236806CBF19a03fd300B540CE2` |
 
+The v2 contracts, LINE and Demo USDC are verified on
+[Sourcify](https://sourcify.dev/server/repo-ui/84532/0xe3b293d5b4eb9a07fd0e3c8b9fda57f7124babef)
+(full match) and [Blockscout](https://base-sepolia.blockscout.com/address/0xe3b293d5b4eb9a07fd0e3c8b9fda57f7124babef#code).
+[contracts/verify/](contracts/verify/README.md) has the files and steps for Basescan.
+
 The live app uses the demo settings so a full deal plays out in minutes: on the demo, a "day"
 lasts 3 minutes. The production contract runs the same code with 24-hour days. The v1 contracts
 (`0x53a2…b4b3` and `0xcae6…bdbe`), from before deals could be cancelled or extended, still hold
@@ -160,7 +165,7 @@ wallet, keeping the service awake, and troubleshooting.
 | Contracts | v2: 40 tests passing (unit, fuzz, stateful invariants) |
 | Checker | 55 tests passing; running against the v2 demo deployment |
 | Web app | Live: open a deal, public deal pages, docs, live checker status |
-| Base Sepolia | Deployed; contracts not yet verified on Basescan |
+| Base Sepolia | v2 deployed; verified on Sourcify (full match) and Blockscout; Basescan upload prepared in `contracts/verify/` |
 | Base mainnet | Planned |
 
 The contracts are unaudited. Use testnet deployments only.

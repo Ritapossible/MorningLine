@@ -298,7 +298,7 @@ export default function Home() {
         <div className="receipt">
           <div className="receipt-head">
             <b>Receipt</b>
-            <span>Example deal 7</span>
+            <span>Illustration, not a real deal</span>
           </div>
           <dl>
             <dt>From</dt>

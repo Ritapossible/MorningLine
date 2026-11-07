@@ -67,7 +67,8 @@ export function PriceCalc() {
           <dd className="mono">sponsor reclaims it after the grace period</dd>
         </dl>
         <Link href="/new" className="pill primary wide">
-          Open a ${total.toFixed(2)} deal <span aria-hidden="true">→</span>
+          <span>{`Open a $${total.toFixed(2)} deal`}</span>
+          <span aria-hidden="true">→</span>
         </Link>
         <p className="small calc-note">
           USDC on Base. The maintainer pays no fee and no gas: payouts are sent by the daily check.

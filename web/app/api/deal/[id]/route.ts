@@ -24,7 +24,7 @@ import {
   parseAbiItem,
 } from "viem";
 import { base, baseSepolia } from "viem/chains";
-import { CHAIN_ID, DayStatus, MORNINGLINE, morningLineAbi } from "../../../../lib/contracts";
+import { CHAIN_ID, DayStatus, MORNINGLINE, PREVIOUS_MORNINGLINE, morningLineAbi } from "../../../../lib/contracts";
 
 export const revalidate = 5;
 
@@ -38,12 +38,18 @@ const client = createPublicClient({
 /// Where to start searching. Any block at or before the deployment works; a hint past the
 /// deployment is detected and ignored.
 const START_HINT = BigInt(process.env.NEXT_PUBLIC_START_BLOCK ?? "55642039");
+/// The first contract (v1), still served read-only with ?v=1, and the block it was deployed at.
+const V1_START = 54344003n;
 
 const SPEC = parseAbiItem(
   "event DealSpec(uint256 indexed dealId, string repo, string branch, string path, string line)",
 );
 const REPORTED = parseAbiItem(
   "event DayReported(uint256 indexed dealId, uint256 indexed day, bool present, bytes20 commitSha, bytes32 fileHash)",
+);
+/// v1 reported without a file hash, so its event has a different signature.
+const REPORTED_V1 = parseAbiItem(
+  "event DayReported(uint256 indexed dealId, uint256 indexed day, bool present, bytes20 commitSha)",
 );
 const RECLAIMED = parseAbiItem("event DayReclaimed(uint256 indexed dealId, uint256 indexed day)");
 
@@ -62,7 +68,10 @@ const openedAt = new Map<string, bigint>();
 const specCache = new Map<string, Spec>();
 const reportCache = new Map<string, Report>();
 
-export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
+export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
+  const v1 = new URL(req.url).searchParams.get("v") === "1";
+  const ML = v1 ? PREVIOUS_MORNINGLINE : MORNINGLINE;
+  const hint = v1 ? V1_START : START_HINT;
   const { id } = await ctx.params;
   let dealId: bigint;
   try {
@@ -74,27 +83,27 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
 
   const latest = await client.getBlockNumber();
   const deal = await client.readContract({
-    address: MORNINGLINE, abi: morningLineAbi, functionName: "getDeal", args: [dealId],
+    address: ML, abi: morningLineAbi, functionName: "getDeal", args: [dealId],
     blockNumber: latest,
   });
   if (deal.buyer === "0x0000000000000000000000000000000000000000") {
     return NextResponse.json({ error: "no such deal" }, { status: 404 });
   }
 
-  const key = `${MORNINGLINE}:${dealId}`;
+  const key = `${ML}:${dealId}`;
   let incomplete = false;
 
   // 1. The block the deal was opened in, and its spec.
   let opened = openedAt.get(key);
   if (opened === undefined) {
-    opened = await openingBlock(dealId, latest);
+    opened = await openingBlock(ML, hint, dealId, latest);
     openedAt.set(key, opened);
   }
 
   let spec = specCache.get(key) ?? null;
   if (spec === null) {
     const logs = await client.getLogs({
-      address: MORNINGLINE, event: SPEC, args: { dealId }, fromBlock: opened, toBlock: opened,
+      address: ML, event: SPEC, args: { dealId }, fromBlock: opened, toBlock: opened,
     });
     const a = logs[0]?.args;
     if (a?.repo !== undefined && a.branch !== undefined && a.path !== undefined && a.line !== undefined) {
@@ -110,7 +119,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   const statuses = await Promise.all(
     days.map((d) =>
       client.readContract({
-        address: MORNINGLINE, abi: morningLineAbi, functionName: "dayStatus",
+        address: ML, abi: morningLineAbi, functionName: "dayStatus",
         args: [dealId, BigInt(d)], blockNumber: latest,
       }),
     ),
@@ -119,16 +128,21 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   const missing = settled.filter((d) => !reportCache.has(`${key}:${d}`));
 
   if (missing.length > 0) {
-    const blocks = await settlementBlocks(dealId, missing, opened, latest);
+    const blocks = await settlementBlocks(ML, dealId, missing, opened, latest);
     const byBlock = new Map<bigint, number[]>();
     missing.forEach((d, i) => byBlock.set(blocks[i], [...(byBlock.get(blocks[i]) ?? []), d]));
 
     await Promise.all(
       [...byBlock.keys()].map(async (b) => {
-        const [reported, reclaimed] = await Promise.all([
-          client.getLogs({ address: MORNINGLINE, event: REPORTED, args: { dealId }, fromBlock: b, toBlock: b }),
-          client.getLogs({ address: MORNINGLINE, event: RECLAIMED, args: { dealId }, fromBlock: b, toBlock: b }),
+        const [reportedLogs, reclaimed] = await Promise.all([
+          v1
+            ? client
+                .getLogs({ address: ML, event: REPORTED_V1, args: { dealId }, fromBlock: b, toBlock: b })
+                .then((ls) => ls.map((l) => ({ ...l, args: { ...l.args, fileHash: undefined as `0x${string}` | undefined } })))
+            : client.getLogs({ address: ML, event: REPORTED, args: { dealId }, fromBlock: b, toBlock: b }),
+          client.getLogs({ address: ML, event: RECLAIMED, args: { dealId }, fromBlock: b, toBlock: b }),
         ]);
+        const reported = reportedLogs;
         for (const l of reported) {
           if (l.args.day === undefined) continue;
           reportCache.set(`${key}:${Number(l.args.day)}`, {
@@ -169,14 +183,14 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
 
 /// The first block where dealCount >= dealId. Before deployment the call reverts, which
 /// counts as zero deals.
-async function openingBlock(dealId: bigint, latest: bigint): Promise<bigint> {
+async function openingBlock(ml: `0x${string}`, startHint: bigint, dealId: bigint, latest: bigint): Promise<bigint> {
   const countAt = (b: bigint) =>
     client
-      .readContract({ address: MORNINGLINE, abi: morningLineAbi, functionName: "dealCount", blockNumber: b })
+      .readContract({ address: ml, abi: morningLineAbi, functionName: "dealCount", blockNumber: b })
       .catch(ifReverted(0n));
 
   let lo = 0n;
-  if (START_HINT > 0n && START_HINT < latest && (await countAt(START_HINT)) < dealId) lo = START_HINT;
+  if (startHint > 0n && startHint < latest && (await countAt(startHint)) < dealId) lo = startHint;
   let hi = latest; // getDeal at `latest` found the deal, so dealCount(latest) >= dealId.
   // The answer is in (lo, hi].
   while (hi - lo > 1n) {
@@ -191,7 +205,7 @@ async function openingBlock(dealId: bigint, latest: bigint): Promise<bigint> {
 /// lockstep, so each step is one batched request however many days there are. The search
 /// starts one block before the deal existed, where dayStatus reverts, which counts as Open.
 async function settlementBlocks(
-  dealId: bigint, days: number[], opened: bigint, latest: bigint,
+  ml: `0x${string}`, dealId: bigint, days: number[], opened: bigint, latest: bigint,
 ): Promise<bigint[]> {
   const lo = days.map(() => opened - 1n);
   const hi = days.map(() => latest);
@@ -203,7 +217,7 @@ async function settlementBlocks(
       active.map((i, j) =>
         client
           .readContract({
-            address: MORNINGLINE, abi: morningLineAbi, functionName: "dayStatus",
+            address: ml, abi: morningLineAbi, functionName: "dayStatus",
             args: [dealId, BigInt(days[i])], blockNumber: mids[j],
           })
           .catch(ifReverted<number>(DayStatus.Open)),
