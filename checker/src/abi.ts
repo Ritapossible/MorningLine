@@ -33,6 +33,27 @@ export const morningLineAbi = [
       { name: "day", type: "uint256", indexed: true },
       { name: "present", type: "bool", indexed: false },
       { name: "commitSha", type: "bytes20", indexed: false },
+      { name: "fileHash", type: "bytes32", indexed: false },
+    ],
+  },
+  {
+    type: "event",
+    name: "DealShortened",
+    inputs: [
+      { name: "dealId", type: "uint256", indexed: true },
+      { name: "by", type: "address", indexed: true },
+      { name: "oldDayCount", type: "uint16", indexed: false },
+      { name: "newDayCount", type: "uint16", indexed: false },
+      { name: "refunded", type: "uint256", indexed: false },
+    ],
+  },
+  {
+    type: "event",
+    name: "DealExtended",
+    inputs: [
+      { name: "dealId", type: "uint256", indexed: true },
+      { name: "oldDayCount", type: "uint16", indexed: false },
+      { name: "newDayCount", type: "uint16", indexed: false },
     ],
   },
   {
@@ -52,8 +73,31 @@ export const morningLineAbi = [
       { name: "day", type: "uint256" },
       { name: "present", type: "bool" },
       { name: "commitSha", type: "bytes20" },
+      { name: "fileHash", type: "bytes32" },
     ],
     outputs: [],
+  },
+  {
+    type: "function",
+    name: "getDeal",
+    stateMutability: "view",
+    inputs: [{ name: "dealId", type: "uint256" }],
+    outputs: [
+      {
+        name: "",
+        type: "tuple",
+        components: [
+          { name: "buyer", type: "address" },
+          { name: "start", type: "uint40" },
+          { name: "dayCount", type: "uint16" },
+          { name: "settled", type: "uint16" },
+          { name: "payee", type: "address" },
+          { name: "checker", type: "address" },
+          { name: "dailyAmount", type: "uint128" },
+          { name: "specHash", type: "bytes32" },
+        ],
+      },
+    ],
   },
   {
     type: "function",

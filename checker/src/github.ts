@@ -62,6 +62,25 @@ export async function readFileAtCommit(
   return await res.text();
 }
 
+/// Whether a file exists at an exact commit, without downloading it. A folder is not a file.
+/// Throws when GitHub could not answer, like the other reads.
+export async function fileExistsAtCommit(
+  repo: string,
+  path: string,
+  sha: string,
+  token: string | undefined,
+  fetchImpl: typeof fetch = fetch,
+): Promise<boolean> {
+  const encodedPath = path.split("/").map(encodeURIComponent).join("/");
+  const url = `${API}/repos/${repo}/contents/${encodedPath}?ref=${sha}`;
+  const res = await fetchImpl(url, { headers: headers(token) });
+  if (res.status === 404) return false;
+  if (res.status === 403 || res.status === 429) throw new LookupFailed("rate limited");
+  if (!res.ok) throw new LookupFailed(`contents returned ${res.status}`);
+  const body = (await res.json()) as unknown;
+  return !Array.isArray(body) && (body as { type?: string }).type === "file";
+}
+
 /// "owner/name", as stored in the spec. Rejects anything else so a malformed spec cannot be
 /// turned into a request for some other path on the API.
 export function isWellFormedRepo(repo: string): boolean {

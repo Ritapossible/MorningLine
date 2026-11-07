@@ -54,7 +54,8 @@ export async function scan(
 type Decoded =
   | { kind: "opened"; dealId: bigint; checker: Address; dayCount: number; start: bigint }
   | { kind: "spec"; dealId: bigint; spec: Spec }
-  | { kind: "settled"; dealId: bigint; day: number };
+  | { kind: "settled"; dealId: bigint; day: number }
+  | { kind: "length"; dealId: bigint; dayCount: number };
 
 function tryDecode(log: { topics: readonly `0x${string}`[]; data: `0x${string}` }): Decoded | null {
   let ev;
@@ -77,6 +78,10 @@ function tryDecode(log: { topics: readonly `0x${string}`[]; data: `0x${string}` 
   if (ev.eventName === "DealSpec") {
     const a = ev.args as { dealId: bigint; repo: string; branch: string; path: string; line: string };
     return { kind: "spec", dealId: a.dealId, spec: { repo: a.repo, branch: a.branch, path: a.path, line: a.line } };
+  }
+  if (ev.eventName === "DealShortened" || ev.eventName === "DealExtended") {
+    const a = ev.args as { dealId: bigint; newDayCount: number };
+    return { kind: "length", dealId: a.dealId, dayCount: Number(a.newDayCount) };
   }
   if (ev.eventName === "DayReported" || ev.eventName === "DayReclaimed") {
     const a = ev.args as { dealId: bigint; day: bigint };
@@ -102,6 +107,7 @@ function apply(deals: Map<string, Deal>, d: Decoded): void {
   const deal = deals.get(id);
   if (deal === undefined) return;
   if (d.kind === "spec") deal.spec = d.spec;
+  else if (d.kind === "length") deal.dayCount = d.dayCount;
   else deal.settled.add(d.day);
 }
 
@@ -122,21 +128,20 @@ export function openDays(
   return out;
 }
 
-/// Read the day's status straight from state. Reports are idempotent retries, so this is checked
-/// immediately before sending: a day settled since the log scan must not be reported again.
+/// Read the day straight from state. Checked immediately before sending, because the log scan
+/// may be a few seconds stale: a day settled since then must not be reported again, and a day
+/// removed by a cancel or release no longer exists (reporting it would revert every loop).
 export async function isStillOpen(
   client: PublicClient,
   address: Address,
   dealId: bigint,
   day: number,
 ): Promise<boolean> {
-  const status = await client.readContract({
-    address,
-    abi: morningLineAbi,
-    functionName: "dayStatus",
-    args: [dealId, BigInt(day)],
-  });
-  return Number(status) === DayStatus.Open;
+  const [deal, status] = await Promise.all([
+    client.readContract({ address, abi: morningLineAbi, functionName: "getDeal", args: [dealId] }),
+    client.readContract({ address, abi: morningLineAbi, functionName: "dayStatus", args: [dealId, BigInt(day)] }),
+  ]);
+  return day < Number(deal.dayCount) && Number(status) === DayStatus.Open;
 }
 
 export async function sendReport(
@@ -147,6 +152,7 @@ export async function sendReport(
   day: number,
   present: boolean,
   sha: `0x${string}`,
+  fileHash: `0x${string}`,
 ): Promise<`0x${string}`> {
   const account = wallet.account;
   if (account === undefined) throw new Error("wallet has no account");
@@ -156,7 +162,7 @@ export async function sendReport(
     address,
     abi: morningLineAbi,
     functionName: "report",
-    args: [dealId, BigInt(day), present, sha],
+    args: [dealId, BigInt(day), present, sha, fileHash],
   });
   return await wallet.writeContract(request);
 }

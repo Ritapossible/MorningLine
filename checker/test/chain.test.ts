@@ -1,6 +1,8 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import type { Address, PublicClient } from "viem";
+import { encodeAbiParameters, encodeEventTopics } from "viem";
+import { morningLineAbi } from "../src/abi.ts";
 import { DEFAULT_LOG_CHUNK, newScanner, openDays, scan } from "../src/chain.ts";
 
 const ADDRESS = "0x000000000000000000000000000000000000beef" as Address;
@@ -97,5 +99,68 @@ describe("openDays", () => {
 
   it("offers nothing once every window has closed", () => {
     assert.deepEqual(openDays({ ...deal }, 99_999n, 180n, 120n), []);
+  });
+});
+
+/// A client whose logs are real encoded MorningLine events, delivered in the first chunk.
+function clientWithEvents(events: { topics: `0x${string}`[]; data: `0x${string}` }[]) {
+  let sent = false;
+  return {
+    getLogs: async () => {
+      if (sent) return [];
+      sent = true;
+      return events;
+    },
+  } as unknown as PublicClient;
+}
+
+function opened(dealId: bigint, dayCount: number, start: bigint, checker: Address) {
+  return {
+    topics: encodeEventTopics({
+      abi: morningLineAbi,
+      eventName: "DealOpened",
+      args: { dealId, buyer: ADDRESS, payee: ADDRESS },
+    }) as `0x${string}`[],
+    data: encodeAbiParameters(
+      [{ type: "address" }, { type: "uint128" }, { type: "uint16" }, { type: "uint40" }, { type: "bytes32" }],
+      [checker, 1_000_000n, dayCount, Number(start), `0x${"00".repeat(32)}`],
+    ),
+  };
+}
+
+function lengthChange(eventName: "DealShortened" | "DealExtended", dealId: bigint, from: number, to: number) {
+  const topics = encodeEventTopics({
+    abi: morningLineAbi,
+    eventName,
+    args: eventName === "DealShortened" ? { dealId, by: ADDRESS } : { dealId },
+  } as never) as `0x${string}`[];
+  const data =
+    eventName === "DealShortened"
+      ? encodeAbiParameters([{ type: "uint16" }, { type: "uint16" }, { type: "uint256" }], [from, to, BigInt(from - to)])
+      : encodeAbiParameters([{ type: "uint16" }, { type: "uint16" }], [from, to]);
+  return { topics, data };
+}
+
+describe("deal length changes", () => {
+  const checker = "0x00000000000000000000000000000000000c0ffe" as Address;
+
+  it("stops offering days a cancel or release removed", async () => {
+    const s = newScanner(1n, 200n);
+    const client = clientWithEvents([opened(1n, 10, 1_000n, checker), lengthChange("DealShortened", 1n, 10, 3)]);
+    const deals = await scan(s, client, ADDRESS, 100n);
+    const deal = deals.get("1")!;
+    assert.equal(deal.dayCount, 3);
+    // Day 5 would be open at this time had the deal not been shortened.
+    const days = openDays(deal, 1_000n + 5n * 180n + 1n, 180n, 120n).map((d) => d.day);
+    assert.ok(!days.includes(5));
+  });
+
+  it("offers the days an extension adds", async () => {
+    const s = newScanner(1n, 200n);
+    const client = clientWithEvents([opened(2n, 2, 1_000n, checker), lengthChange("DealExtended", 2n, 2, 6)]);
+    const deals = await scan(s, client, ADDRESS, 100n);
+    assert.equal(deals.get("2")!.dayCount, 6);
+    const days = openDays(deals.get("2")!, 1_000n + 4n * 180n + 1n, 180n, 120n).map((d) => d.day);
+    assert.ok(days.includes(4));
   });
 });

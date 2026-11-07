@@ -1,6 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { decide, ZERO_SHA } from "../src/check.ts";
+import { keccak256, toBytes } from "viem";
+import { decide, ZERO_HASH, ZERO_SHA } from "../src/check.ts";
 import { LookupFailed } from "../src/github.ts";
 
 const SHA = "a".repeat(40);
@@ -13,6 +14,8 @@ function fakeFetch(opts: {
   sha?: string;
   fileStatus?: number;
   body?: string;
+  /// Repo files other than the pinned one that exist at the commit (images).
+  images?: string[];
 }): typeof fetch {
   return (async (input: string | URL | Request) => {
     const url = String(input);
@@ -20,6 +23,11 @@ function fakeFetch(opts: {
       const status = opts.commitStatus ?? 200;
       if (status !== 200) return new Response("", { status });
       return new Response(JSON.stringify({ sha: opts.sha ?? SHA }), { status: 200 });
+    }
+    if (url.includes("/contents/") && !url.includes("/contents/README.md")) {
+      const path = decodeURIComponent(url.split("/contents/")[1]?.split("?")[0] ?? "");
+      if (!(opts.images ?? []).includes(path)) return new Response("", { status: 404 });
+      return new Response(JSON.stringify({ type: "file", path }), { status: 200 });
     }
     if (url.includes("/contents/")) {
       const status = opts.fileStatus ?? 200;
@@ -81,5 +89,37 @@ describe("decide", () => {
   it("never reports present with a zero sha (the contract would revert)", async () => {
     const d = await decide(SPEC, undefined, fakeFetch({ body: `${LINE}\n` }));
     if (d.present) assert.notEqual(d.sha, ZERO_SHA);
+  });
+
+  it("records a hash of the file it read, and zero when there was no file", async () => {
+    const body = `# Hi\n\n${LINE}\n`;
+    const d = await decide(SPEC, undefined, fakeFetch({ body }));
+    assert.equal(d.fileHash, keccak256(toBytes(body)));
+    const gone = await decide(SPEC, undefined, fakeFetch({ fileStatus: 404 }));
+    assert.equal(gone.fileHash, ZERO_HASH);
+  });
+
+  it("keeps the file hash on a missing day, so the refund has evidence too", async () => {
+    const body = "# Hi\n";
+    const d = await decide(SPEC, undefined, fakeFetch({ body }));
+    assert.equal(d.present, false);
+    assert.equal(d.fileHash, keccak256(toBytes(body)));
+  });
+
+  it("pays a line with a repo image only while the image is in the same commit", async () => {
+    const line = "![Acme](docs/acme.png) Sponsored by Acme";
+    const spec = { ...SPEC, line };
+    const body = `${line}\n`;
+    const there = await decide(spec, undefined, fakeFetch({ body, images: ["docs/acme.png"] }));
+    assert.equal(there.present, true);
+    const gone = await decide(spec, undefined, fakeFetch({ body, images: [] }));
+    assert.equal(gone.present, false);
+    assert.match(gone.reason, /docs\/acme\.png/);
+  });
+
+  it("does not try to cover images on other hosts", async () => {
+    const line = '<img src="https://cdn.example/acme.png"> Sponsored by Acme';
+    const d = await decide({ ...SPEC, line }, undefined, fakeFetch({ body: `${line}\n` }));
+    assert.equal(d.present, true);
   });
 });

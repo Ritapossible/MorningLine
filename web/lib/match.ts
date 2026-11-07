@@ -28,3 +28,49 @@ export function linePresent(fileContents: string, specLine: string): boolean {
   if (want.trim() === "") return false;
   return normalizeLines(fileContents).includes(want);
 }
+
+/// Images the sponsor line shows from the repository itself, as repo paths, or null if the line
+/// points at an image path that can never exist (one that climbs out of the repository).
+///
+/// A repo image is part of the evidence: the same commit that holds the line must hold the
+/// image, so a logo deleted from the repo counts as missing even if the line stays. Images on
+/// other hosts are not covered: another server can show the checker one picture and visitors
+/// another, which no commit can settle. Relative paths resolve from the pinned file's folder, a
+/// leading "/" from the repository root, as GitHub renders them.
+export function repoImagePaths(specLine: string, filePath: string): string[] | null {
+  const refs: string[] = [];
+  for (const m of specLine.matchAll(/!\[[^\]]*\]\(\s*<?([^)\s>]+)>?(?:\s+["'][^"']*["'])?\s*\)/g)) {
+    if (m[1] !== undefined) refs.push(m[1]);
+  }
+  for (const m of specLine.matchAll(/<img\b[^>]*?\bsrc\s*=\s*["']([^"']+)["']/gi)) {
+    if (m[1] !== undefined) refs.push(m[1]);
+  }
+
+  const dir = filePath.includes("/") ? filePath.slice(0, filePath.lastIndexOf("/")).split("/") : [];
+  const out: string[] = [];
+  for (const raw of refs) {
+    const ref = raw.trim();
+    // Another host, a protocol-relative URL, inline data or an in-page anchor: not in the repo.
+    if (/^[a-z][a-z0-9+.-]*:/i.test(ref) || ref.startsWith("//") || ref.startsWith("#")) continue;
+    let path = ref.split(/[?#]/)[0] ?? "";
+    try {
+      path = decodeURIComponent(path);
+    } catch {
+      return null;
+    }
+    const parts = path.startsWith("/") ? [] : [...dir];
+    for (const seg of path.split("/")) {
+      if (seg === "" || seg === ".") continue;
+      if (seg === "..") {
+        if (parts.length === 0) return null;
+        parts.pop();
+      } else {
+        parts.push(seg);
+      }
+    }
+    if (parts.length === 0) return null;
+    const resolved = parts.join("/");
+    if (!out.includes(resolved)) out.push(resolved);
+  }
+  return out;
+}

@@ -106,12 +106,12 @@ async function runOnce(
       if (!(await isStillOpen(client, address, deal.dealId, day))) continue;
 
       const tx = await sendReport(
-        wallet, client, address, deal.dealId, day, decision.present, decision.sha,
+        wallet, client, address, deal.dealId, day, decision.present, decision.sha, decision.fileHash,
       );
       health.reportsSent += 1;
       console.log(
         `deal ${deal.dealId} day ${day}: ${decision.present ? "present" : "missing"} ` +
-          `(${decision.reason}) sha ${decision.sha} tx ${tx}`,
+          `(${decision.reason}) sha ${decision.sha} file ${decision.fileHash} tx ${tx}`,
       );
     }
   }

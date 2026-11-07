@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { linePresent, normalize, normalizeLines } from "../src/match.ts";
+import { linePresent, normalize, normalizeLines, repoImagePaths } from "../src/match.ts";
 
 const LINE = "Sponsored by [Acme](https://acme.example) - we pay for the days it stays up.";
 
@@ -71,5 +71,36 @@ describe("linePresent", () => {
 
   it("treats a missing file (empty string) as missing, not an error", () => {
     assert.doesNotThrow(() => linePresent("", LINE));
+  });
+});
+
+describe("repoImagePaths", () => {
+  it("resolves markdown and HTML images relative to the pinned file", () => {
+    assert.deepEqual(repoImagePaths("![a](logo.png) <img src='./img/b.svg' width=72>", "docs/README.md"), [
+      "docs/logo.png",
+      "docs/img/b.svg",
+    ]);
+  });
+  it("treats a leading slash as the repository root", () => {
+    assert.deepEqual(repoImagePaths("![a](/assets/logo.png)", "docs/README.md"), ["assets/logo.png"]);
+  });
+  it("follows .. within the repository", () => {
+    assert.deepEqual(repoImagePaths("![a](../logo.png)", "docs/README.md"), ["logo.png"]);
+  });
+  it("rejects a path that climbs out of the repository", () => {
+    assert.equal(repoImagePaths("![a](../../logo.png)", "docs/README.md"), null);
+  });
+  it("ignores images on other hosts, data URLs and anchors", () => {
+    assert.deepEqual(
+      repoImagePaths('![a](https://x.example/a.png) ![b](//cdn.example/b.png) ![c](data:image/png;base64,AA) <img src="#top">', "README.md"),
+      [],
+    );
+  });
+  it("drops query strings and decodes escapes", () => {
+    assert.deepEqual(repoImagePaths("![a](my%20logo.png?raw=true)", "README.md"), ["my logo.png"]);
+  });
+  it("lists each image once, and nothing for a plain line", () => {
+    assert.deepEqual(repoImagePaths("![a](l.png) ![b](l.png)", "README.md"), ["l.png"]);
+    assert.deepEqual(repoImagePaths("Sponsored by Acme", "README.md"), []);
   });
 });
