@@ -17,6 +17,9 @@ import { LookupFailed } from "./github.ts";
 import { checkAt, isDue } from "./schedule.ts";
 
 const health = {
+  /// The address reports are sent from. Public; lets anyone confirm the right key is running.
+  checker: null as string | null,
+  chainId: null as number | null,
   startedAt: new Date().toISOString(),
   lastRunAt: null as string | null,
   lastSuccessAt: null as string | null,
@@ -42,6 +45,8 @@ async function loop(config: ReturnType<typeof loadConfig>): Promise<void> {
   ]);
 
   console.log(`checker ${account.address} on chain ${chainId}`);
+  health.checker = account.address;
+  health.chainId = chainId;
   console.log(describe(config));
   console.log(`dayLength ${dayLength}s  reportGrace ${reportGrace}s`);
 
