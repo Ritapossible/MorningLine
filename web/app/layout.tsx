@@ -52,7 +52,28 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main className="wrap page">{children}</main>
 
           <footer className="foot">
-            <div className="wrap">© 2026 Morning Line</div>
+            <div className="wrap foot-top">
+              <div className="foot-brand">
+                <Link href="/" className="wordmark" aria-label="Morning Line, home">
+                  <Logo />
+                </Link>
+                <p>Per-day escrow for sponsor lines in GitHub READMEs, settled on Base.</p>
+              </div>
+              <nav className="foot-links" aria-label="Footer">
+                <Link href="/#how">How it works</Link>
+                <Link href="/maintainers">For maintainers</Link>
+                <Link href="/docs">Docs</Link>
+                <a href="https://github.com/Ritapossible/MorningLine" target="_blank" rel="noreferrer">
+                  Source
+                </a>
+              </nav>
+            </div>
+            <div className="wrap">
+              <div className="foot-base">
+                <span>© 2026 Morning Line</span>
+                <span>Built on Base</span>
+              </div>
+            </div>
           </footer>
         </Providers>
       </body>

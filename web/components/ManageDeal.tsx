@@ -73,6 +73,20 @@ export function ManageDeal({
   const needUsdc = (usdcAllow ?? 0n) < extendUsdc;
   const needLine = (lineAllow ?? 0n) < extendFuel;
 
+  // Say it before signing, not after a revert: adding days needs the USDC and the LINE in hand.
+  const { data: usdcBal } = useReadContract({
+    address: USDC, abi: erc20Abi, functionName: "balanceOf",
+    args: address ? [address as `0x${string}`] : undefined,
+    query: { enabled: isBuyer },
+  });
+  const { data: lineBal } = useReadContract({
+    address: LINE, abi: erc20Abi, functionName: "balanceOf",
+    args: address ? [address as `0x${string}`] : undefined,
+    query: { enabled: isBuyer },
+  });
+  const shortUsdc = usdcBal !== undefined && usdcBal < extendUsdc;
+  const shortLine = lineBal !== undefined && lineBal < extendFuel;
+
   async function send(label: string, w: Parameters<typeof write>[0], after?: () => Promise<unknown>) {
     setBusy(label);
     setErr(null);
@@ -200,7 +214,7 @@ export function ManageDeal({
                 </button>
                 <button
                   className="primary"
-                  disabled={busy !== null || extraDays === 0 || needUsdc || needLine}
+                  disabled={busy !== null || extraDays === 0 || needUsdc || needLine || shortUsdc || shortLine}
                   onClick={() =>
                     send("extend", {
                       address: contract, abi: morningLineAbi, functionName: "extend", args: [dealId, extraDays],
@@ -210,6 +224,15 @@ export function ManageDeal({
                   {busy === "extend" ? "Adding" : `Add ${extraDays} ${extraDays === 1 ? "day" : "days"}`}
                 </button>
               </div>
+              {shortUsdc || shortLine ? (
+                <p className="small" style={{ marginTop: 8, marginBottom: 0 }}>
+                  This wallet has {shortUsdc ? `${usd(usdcBal ?? 0n)} USDC` : ""}
+                  {shortUsdc && shortLine ? " and " : ""}
+                  {shortLine && fuelPerCheck > 0n ? `${(lineBal ?? 0n) / fuelPerCheck} LINE` : ""}, not
+                  enough for {extraDays} more {extraDays === 1 ? "day" : "days"}. Get more on the
+                  Open a deal page, or add fewer days.
+                </p>
+              ) : null}
             </>
           ) : (
             <p className="small" style={{ marginBottom: 0 }}>

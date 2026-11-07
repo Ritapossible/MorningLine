@@ -114,6 +114,18 @@ export default function NewDeal() {
     args: address ? [address] : undefined,
     query: { enabled: Boolean(address) },
   });
+  // The demo faucets give each wallet one drip a day. Read when the next one is allowed, so the
+  // page never offers a drip the contract would refuse.
+  const { data: lineNext, refetch: refetchLineNext } = useReadContract({
+    address: LINE, abi: faucetAbi, functionName: "nextDripAt",
+    args: address ? [address] : undefined,
+    query: { enabled: Boolean(address) && IS_DEMO },
+  });
+  const { data: usdcNext, refetch: refetchUsdcNext } = useReadContract({
+    address: USDC, abi: faucetAbi, functionName: "nextDripAt",
+    args: address ? [address] : undefined,
+    query: { enabled: Boolean(address) && IS_DEMO && USDC_IS_FAUCET },
+  });
   const { data: usdcAllowance, refetch: refetchUsdcAllow } = useReadContract({
     address: USDC, abi: erc20Abi, functionName: "allowance",
     args: address ? [address, MORNINGLINE] : undefined,
@@ -406,22 +418,39 @@ export default function NewDeal() {
                 </p>
               ) : null}
               {IS_DEMO && (shortUsdc || shortLine) ? (
-                <div className="row" style={{ marginBottom: 14 }}>
+                <div style={{ marginBottom: 14 }}>
                   {shortUsdc && USDC_IS_FAUCET ? (
-                    <button
-                      disabled={busy !== null}
-                      onClick={() => run("usdc-drip", () => drip(USDC, () => void refetchUsdc()))}
-                    >
-                      {busy === "usdc-drip" ? "Dripping" : "Get demo USDC"}
-                    </button>
+                    <FaucetRow
+                      label="demo USDC"
+                      have={`${usd(usdcBalance ?? 0n)} USDC`}
+                      need={`${usd(totalUsdc)} USDC`}
+                      amount="100 demo USDC"
+                      next={usdcNext}
+                      busy={busy}
+                      onDrip={() =>
+                        run("usdc-drip", () => drip(USDC, () => void Promise.all([refetchUsdc(), refetchUsdcNext()])))
+                      }
+                      dripKey="usdc-drip"
+                    />
                   ) : null}
                   {shortLine ? (
-                    <button
-                      disabled={busy !== null}
-                      onClick={() => run("line-drip", () => drip(LINE, () => void refetchLine()))}
-                    >
-                      {busy === "line-drip" ? "Dripping" : "Get LINE fuel"}
-                    </button>
+                    <FaucetRow
+                      label="LINE"
+                      have={`${fuelPerCheck ? (lineBalance ?? 0n) / fuelPerCheck : 0n} LINE`}
+                      need={`${dayCount} LINE, one per day`}
+                      amount="30 LINE"
+                      next={lineNext}
+                      busy={busy}
+                      onDrip={() =>
+                        run("line-drip", () => drip(LINE, () => void Promise.all([refetchLine(), refetchLineNext()])))
+                      }
+                      dripKey="line-drip"
+                      waitHint={
+                        fuelPerCheck && (lineBalance ?? 0n) >= fuelPerCheck
+                          ? `Or make this deal ${(lineBalance ?? 0n) / fuelPerCheck} days or shorter.`
+                          : "Cancelling a running deal returns the LINE of its unused days."
+                      }
+                    />
                   ) : null}
                 </div>
               ) : null}
@@ -476,5 +505,50 @@ export default function NewDeal() {
         </section>
       )}
     </>
+  );
+}
+
+/// One demo faucet: a drip button when the faucet allows it, otherwise when it will, in local
+/// time. The faucets give each wallet one drip a day, and the contract refuses an early one.
+function FaucetRow({
+  label,
+  have,
+  need,
+  amount,
+  next,
+  busy,
+  onDrip,
+  dripKey,
+  waitHint,
+}: {
+  label: string;
+  have: string;
+  need: string;
+  amount: string;
+  next: bigint | undefined;
+  busy: string | null;
+  onDrip: () => void;
+  dripKey: string;
+  waitHint?: string;
+}) {
+  const now = BigInt(Math.floor(Date.now() / 1000));
+  const canDrip = next === undefined || next <= now;
+  return (
+    <div className="faucet-row">
+      <p className="small" style={{ margin: 0 }}>
+        You have {have}; this deal needs {need}.{" "}
+        {canDrip
+          ? `The demo faucet gives ${amount} a day, free.`
+          : `You have used today's free ${label}. The next ${amount} are available at ${new Date(
+              Number(next) * 1000,
+            ).toLocaleString(undefined, { weekday: "short", hour: "2-digit", minute: "2-digit" })}.`}{" "}
+        {!canDrip && waitHint ? waitHint : null}
+      </p>
+      {canDrip ? (
+        <button disabled={busy !== null} onClick={onDrip}>
+          {busy === dripKey ? "Getting it" : `Get ${amount}`}
+        </button>
+      ) : null}
+    </div>
   );
 }
