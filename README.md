@@ -2,6 +2,8 @@
 
 **Per-day escrow for sponsor lines in GitHub READMEs, on Base.**
 
+Sponsored by the Morning Line demo: this line is paid only for the days it is here.
+
 A sponsor locks USDC for a number of days. Each day the sponsor line is in the repository's
 README, that day's USDC goes to the maintainer. Each day it is missing, that day's USDC goes back
 to the sponsor. Every result is recorded on chain with the commit it was read from, so anyone can
