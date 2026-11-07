@@ -3,7 +3,7 @@
 Each entry: what we chose, why, and what we gave up.
 
 ### D1 - Settle one day at a time (2026-11-03)
-**Why:** all-or-nothing escrow (Stamped's model) lets a maintainer keep the line up until the
+**Why:** all-or-nothing escrow lets a maintainer keep the line up until the
 final check and remove it after. Per-day settlement removes the incentive: removing the line
 early only forfeits the remaining days. **Cost:** one transaction per day per deal; cheap on
 Base.

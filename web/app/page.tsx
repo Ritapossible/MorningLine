@@ -62,20 +62,6 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
       </>
     ),
   },
-  {
-    q: "Isn't this Stamped?",
-    a: (
-      <>
-        <a href="https://stamped.cash" target="_blank" rel="noreferrer">
-          Stamped
-        </a>{" "}
-        escrows sponsored posts on X and pays in full once the post has stayed up. Morning Line
-        covers GitHub READMEs, pays one day at a time, and every result comes with a commit anyone
-        can open. SponsorGit sells README lines without escrow; Polar and GitHub Sponsors take the
-        money but do not pay per day the line stays up.
-      </>
-    ),
-  },
 ];
 
 export default function Home() {
@@ -116,12 +102,6 @@ export default function Home() {
         </div>
       </section>
 
-      {IS_DEMO ? (
-        <p className="demo-band">
-          Demo deployment: days last 3 minutes instead of 24 hours, the grace period is 2 minutes,
-          and the USDC and LINE here are faucet tokens worth nothing.
-        </p>
-      ) : null}
 
       {/* -------------------------------------------------------------- live board */}
       <section className="block">
@@ -387,9 +367,7 @@ export default function Home() {
             <details key={f.q}>
               <summary>
                 {f.q}
-                <span className="faq-plus" aria-hidden="true">
-                  +
-                </span>
+                <span className="faq-plus" aria-hidden="true" />
               </summary>
               <p>{f.a}</p>
             </details>

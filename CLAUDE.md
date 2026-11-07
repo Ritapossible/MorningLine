@@ -32,7 +32,8 @@ A change to `MorningLine.sol` without a test for its new behavior is not done. R
 - Only the exact raw line in the pinned file counts; remote images are not covered.
 - Matching is literal, not meaning. The checker is trusted for which commit it reads;
   a lie is visible and bounded, not prevented.
-- Name Stamped, Payd, SponsorGit, Polar and GitHub Sponsors as prior art.
+- Morning Line stands alone: do not name or compare it with other products in the README, the
+  site or the docs.
 
 ## Security
 - Never commit, paste or log keys. Secrets live only in Vercel and the checker host's

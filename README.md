@@ -1,135 +1,163 @@
 # Morning Line
 
-**Sponsor a GitHub README and pay only for the days your line stays up.**
+**Per-day escrow for sponsor lines in GitHub READMEs, on Base.**
 
-Crypto can escrow anything that happens on-chain, but almost nothing that happens off it.
-Morning Line pays for an off-chain deliverable, a sponsor line in a GitHub README, one
-verified day at a time, with evidence anyone can open.
+A sponsor locks USDC for a number of days. Each day the sponsor line is in the repository's
+README, that day's USDC goes to the maintainer. Each day it is missing, that day's USDC goes back
+to the sponsor. Every result is recorded on chain with the commit it was read from, so anyone can
+check it.
 
-- The sponsor locks USDC on Base for a number of days.
-- Once a day, Morning Line reads the pinned file at the latest commit of the repo's pinned
-  branch and looks for the exact sponsor line.
-- Each day the line is there, that day's USDC goes to the maintainer. Each day it is missing,
-  that day's USDC goes back to the sponsor.
-- Every check records the commit SHA on Base, so anyone can open that commit and see the file.
-- Every check spends one unit of the app token (LINE). No token, no check, no payout.
-- If the checker goes quiet, the sponsor reclaims every unchecked day 48 hours after it ends.
+[Live app](https://morning-line-phi.vercel.app) · [Docs](https://morning-line-phi.vercel.app/docs) · [Security model](docs/SECURITY.md)
 
-Built for Vibestarter's Vibeathon 02 (build window 2-9 Nov 2026).
+---
 
-## Status
+## Contents
 
-| Part | State |
-|---|---|
-| `MorningLine.sol` escrow + `LineToken.sol` fuel | written, 24 tests passing (unit, fuzz, stateful invariants) |
-| Deploy script, Base networks, `DemoUSDC` faucet | written, green in CI |
-| Checker worker | 42 unit tests passing, and confirmed end to end on Base Sepolia: present paid, missing refunded, silence reclaimed |
-| Web app | built: open a deal, public deal pages, live presence preview |
-| Base Sepolia deployment | live, see below; not yet verified on Basescan |
-| Base mainnet deployment | planned |
+- [How it works](#how-it-works)
+- [Guarantees and limits](#guarantees-and-limits)
+- [Architecture](#architecture)
+- [Deployments](#deployments)
+- [Getting started](#getting-started)
+- [Configuration](#configuration)
+- [Deploying](#deploying)
+- [Project status](#project-status)
+- [Security](#security)
+- [License](#license)
 
-### Base Sepolia (chain 84532)
+## How it works
+
+1. **Open a deal.** The sponsor picks a public repository, a branch, a file (usually
+   `README.md`) and the exact line to pay for, then sets a price per day, a number of days and
+   the maintainer's address. The USDC for every day, plus one LINE per day as fuel, is locked in
+   the contract in the same transaction.
+2. **Check daily.** Once a day, at a time the maintainer cannot predict, the checker reads the
+   pinned file at the latest commit of the pinned branch and looks for the whole line.
+3. **Settle each day on its own.** Present sends that day's USDC to the maintainer; missing sends
+   it back to the sponsor. Either way the commit hash goes on chain and one LINE is burned.
+4. **Silence is never final.** A day nobody reports becomes reclaimable by the sponsor once its
+   report window closes (48 hours after the day ends in production).
+
+The maintainer needs only an address on Base: no account, no fee and no gas.
+
+## Guarantees and limits
+
+**Enforced by the contract**
+
+- Each day of a deal settles exactly once: paid to the maintainer or refunded to the sponsor.
+- No owner, admin or upgrade path can move a deal's money. The checker can only choose, per
+  day, between those two outcomes.
+- A day nobody reports goes back to the sponsor after the grace period.
+
+**Not promised** (also shown on every deal page)
+
+- A commit hash proves what that commit contains, not that it was the commit visitors saw that
+  day. The checker chooses which commit to report; anyone can compare it with the public history.
+- Only the exact raw line in the pinned file counts. A remotely hosted image is not covered.
+- Matching is literal text, not meaning. A reformatted line counts as missing.
+- There is no dispute mechanism. A dishonest checker is visible and bounded, not prevented.
+- If the repository is deleted, its evidence goes with it.
+
+## Architecture
+
+| Component | Path | Role |
+|---|---|---|
+| Contracts | `contracts/` | `MorningLine.sol` holds escrow and settles days; `LineToken.sol` is the fuel token. Solidity, Hardhat 3. |
+| Checker | `checker/` | Node service that reads GitHub and calls `report()`. Stateless; safe to restart. |
+| Web app | `web/` | Next.js app to open deals, view any deal publicly, and read the docs. |
+| Docs | `docs/` | Plan, architecture, security model, decision log, hosting guide. |
+
+The matching rule lives in `checker/src/match.ts` and is copied byte for byte to
+`web/lib/match.ts`, so the deal page's presence preview runs the same code that moves money. CI
+fails if the two copies differ.
+
+More detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## Deployments
+
+### Base Sepolia (chain ID 84532)
 
 | Contract | Address |
 |---|---|
-| MorningLine, production settings (1 day days, 48 h grace) | `0x53a2861c4fbc29f17885b7c3616fbcc4365ad4b3` |
+| MorningLine, production settings (24 h days, 48 h grace) | `0x53a2861c4fbc29f17885b7c3616fbcc4365ad4b3` |
 | MorningLine, demo settings (180 s days, 120 s grace) | `0xcae6005f50ada8c55e6785998aaeb22242aabdbe` |
-| LINE fuel | `0x11bd55d6ef883cfd73e346034b6d90d84f2d1ff9` |
-| DemoUSDC faucet | `0xb997cef9a60b8d6f2f3e9dbc42a769dd4fcc2632` |
+| LINE (fuel) | `0x11bd55d6ef883cfd73e346034b6d90d84f2d1ff9` |
+| Demo USDC (faucet) | `0xb997cef9a60b8d6f2f3e9dbc42a769dd4fcc2632` |
+| Checker | `0xf0A44A43F5CE37236806CBF19a03fd300B540CE2` |
 
-Both MorningLine instances point at the same LINE and DemoUSDC, spend 1 LINE per check, and
-burn spent fuel to `0x...dEaD`. Settings were read back from chain after deployment and match
-`docs/ARCHITECTURE.md`. Everything here is testnet: DemoUSDC is worth nothing.
+The live app uses the demo settings so a full deal plays out in minutes. Both instances spend
+1 LINE per check and burn spent fuel to `0x…dEaD`. Testnet tokens have no value.
 
-## What it promises, and what it does not
+## Getting started
 
-**Promised by the contract:**
-- Each day of a deal is either paid to the maintainer or refunded to the sponsor, exactly once.
-- No admin, owner or upgrade can move a deal's money. The checker can only choose, per day,
-  between paying the maintainer and refunding the sponsor.
-- A day nobody reports goes back to the sponsor after the grace period.
+### Prerequisites
 
-**Not promised (shown on every deal page):**
-- The SHA proves what that commit contains. It does not prove that commit was the one
-  visitors saw that day: the checker chooses which SHA to report, and anyone can compare it
-  with the repo's public history.
-- The check is the exact raw line in one pinned file on one pinned branch. A logo hosted
-  elsewhere can disappear while the line stays; a remote image is not covered.
-- Matching is literal text, not meaning.
-- If the repo is deleted, its evidence goes with it.
+- Node.js 22.13 or later
+- npm
 
-Full trust and threat model: [docs/SECURITY.md](docs/SECURITY.md).
-
-## Already on the market
-
-| Product | What it does | What it does not do |
-|---|---|---|
-| [Stamped](https://stamped.cash/) | Escrow for sponsored X posts on Robinhood Chain, paid in full once the post has stayed up | READMEs; per-day payment; evidence anyone can open |
-| [Payd](https://paydai-five.vercel.app/) | The same idea on X Layer | Same |
-| [SponsorGit](https://sponsorgit.com/maintainers.html) | Sells a README line for a weekly fee | No escrow; the line is not checked |
-| Polar, GitHub Sponsors | Take sponsorship money | Neither pays only for the days the line stays up |
-
-## Repo layout
-
-```
-contracts/   Solidity (Hardhat 3): MorningLine.sol, LineToken.sol, DemoUSDC.sol, tests
-             scripts/deploy.ts deploys production and demo settings
-checker/     daily GitHub check -> report() on Base
-web/         Next.js: /new composes a deal, /deal/[id] is the public page
-docs/        PLAN, ARCHITECTURE, SECURITY, DECISIONS
-```
-
-## Run the tests
+### Contracts
 
 ```bash
 cd contracts
 npm ci
-npm test        # hardhat test solidity: unit, fuzz and invariant tests
+npm test          # unit, fuzz and invariant tests
 ```
 
-Hardhat 3 needs Node 22.13 or later.
+### Checker
 
 ```bash
 cd checker
 npm ci
 npm run typecheck
-npm test        # matching, scheduling and decision tests, no network needed
+npm test          # matching, scheduling and decision tests; no network needed
 ```
 
-## Run the web app
+### Web app
 
 ```bash
 cd web
 npm ci
-npm run dev     # http://localhost:3000
+npm run dev       # http://localhost:3000
 ```
 
-It needs no configuration: the defaults point at the demo deployment on Base Sepolia. Copy
-`.env.example` to `.env.local` to point it somewhere else.
+The app runs with no configuration; its defaults point at the demo deployment on Base Sepolia.
 
-### Deploying it
+## Configuration
 
-The app is a standard Next.js project in `web/`, so on Vercel set **Root Directory** to `web`
-and take the detected build settings. The variables in `web/.env.example` are the ones to set
-in the Vercel project; only `RPC_URL` is server side. Set `NEXT_PUBLIC_PRIVY_APP_ID` to turn on
-Privy sign-in (email, Google or a wallet); its App ID is public, and the site's domain must be in
-the Privy app's allowed origins. Without it the app uses plain wallet connectors. `/api/deal/[id]` finds a deal's evidence
-without wide log scans: it binary-searches contract state for the block the deal was opened in
-and the block each day was settled in, then reads logs from those single blocks. That works on
-the public Base endpoint, which caps a log range at 200 blocks, for deals of any age. It needs
-an RPC that serves historical state, which Base's public endpoints do.
+Copy the example file in each package and fill it in. Never commit the result; `.env*` files are
+ignored.
 
-### Hosting the checker
+| Package | File | Notes |
+|---|---|---|
+| Web | `web/.env.example` | Contract addresses, RPC, and optional Privy sign-in (`NEXT_PUBLIC_PRIVY_APP_ID`) and gas sponsorship (`NEXT_PUBLIC_PRIVY_SPONSOR_GAS`). |
+| Checker | `checker/.env.example` | RPC, checker key, contract address, start block, check seed, GitHub token, poll interval. |
 
-The checker must run all the time. `render.yaml` sets it up on Render as a Blueprint for the demo
-deployment; [docs/HOSTING.md](docs/HOSTING.md) has the step-by-step for Render and Railway, the
-variables it needs and how to tell it is working.
+## Deploying
 
-### One rule, one copy
+**Web app (Vercel).** Import the repository, set **Root Directory** to `web`, keep the detected
+build settings, and add the variables from `web/.env.example`. `NEXT_PUBLIC_` values are fixed at
+build time, so redeploy after changing them.
 
-`web/lib/match.ts` is a byte-for-byte copy of `checker/src/match.ts`. The deal page previews
-whether a line is present using the same code that decides whether money moves, and CI fails
-the build if the two ever drift.
+**Checker (Render or Railway).** The checker must run continuously. `render.yaml` describes it as
+a Render Blueprint; [docs/HOSTING.md](docs/HOSTING.md) covers the variables, creating a checker
+wallet, keeping the service awake, and troubleshooting.
+
+## Project status
+
+| Area | State |
+|---|---|
+| Contracts | 24 tests passing (unit, fuzz, stateful invariants) |
+| Checker | 42 tests passing; running against the demo deployment |
+| Web app | Live: open a deal, public deal pages, docs, live checker status |
+| Base Sepolia | Deployed; contracts not yet verified on Basescan |
+| Base mainnet | Planned |
+
+The contracts are unaudited. Use testnet deployments only.
+
+## Security
+
+The trust model, threat analysis and pre-mainnet checklist are in
+[docs/SECURITY.md](docs/SECURITY.md), along with how to report a vulnerability. Keep exploit
+details out of public issues.
 
 ## License
 

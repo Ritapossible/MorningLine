@@ -769,16 +769,6 @@ a.day:hover {
   }
 }
 
-.demo-band {
-  margin: 48px 0 0;
-  padding: 12px 16px;
-  border-radius: 10px;
-  background: var(--raised);
-  border: 1px solid var(--border);
-  color: var(--muted);
-  font-size: 14px;
-}
-
 /* ---------------------------------------------------------------- stamp art
    The one painted moment: a dawn sky in a perforated frame, in pure CSS. */
 
@@ -1699,11 +1689,17 @@ a.day:hover {
   border-radius: 8px;
   border: 1px solid var(--border);
   font-size: 18px;
+  line-height: 1;
   color: var(--muted);
+}
+
+/* The glyph turns from + to x; the box stays square. */
+.faq-plus::before {
+  content: "+";
   transition: transform 180ms var(--ease);
 }
 
-.faq details[open] .faq-plus {
+.faq details[open] .faq-plus::before {
   transform: rotate(45deg);
 }
 
