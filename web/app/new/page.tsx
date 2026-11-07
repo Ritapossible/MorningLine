@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { decodeEventLog, parseUnits } from "viem";
 import {
   useAccount,
@@ -24,9 +24,10 @@ import {
   morningLineAbi,
 } from "../../lib/contracts";
 import { defaultBranch, fileAtCommit, GitHubError, latestCommit, parseRepo } from "../../lib/github";
-import { linePresent, normalizeLines } from "../../lib/match";
+import { linePresent, normalize, normalizeLines } from "../../lib/match";
 import { Wallet } from "../../components/Wallet";
 import { useWrite } from "../../lib/useWrite";
+import { PRIVY_APP_ID } from "../../lib/auth";
 import { usd } from "../../lib/format";
 
 /// The contract rejects a start that is already in the past, and the transaction needs time to
@@ -61,6 +62,28 @@ export default function NewDeal() {
   const [busy, setBusy] = useState<string | null>(null);
   const [txError, setTxError] = useState<string | null>(null);
   const [openHash, setOpenHash] = useState<`0x${string}` | undefined>();
+
+  // A maintainer's sponsor link (/maintainers) pre-fills this form: repo, branch, file, their
+  // address, price, days, and the line they have already added. The file is then read and that
+  // line selected, so the sponsor only reviews and signs. Nothing is trusted blindly: the line
+  // is selected only if it is really in the file right now.
+  const [fromLink, setFromLink] = useState(false);
+  const [autoLoad, setAutoLoad] = useState(false);
+  const wantLine = useRef<string | null>(null);
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const r = q.get("repo");
+    if (!r) return;
+    setRepoInput(r);
+    if (q.get("branch")) setBranch(q.get("branch") ?? "");
+    if (q.get("path")) setPath(q.get("path") ?? "README.md");
+    if (q.get("payee")) setPayee(q.get("payee") ?? "");
+    if (q.get("price")) setPrice(q.get("price") ?? "1");
+    if (q.get("days")) setDays(q.get("days") ?? "3");
+    wantLine.current = q.get("line");
+    setFromLink(true);
+    setAutoLoad(true);
+  }, []);
 
   const specLine = picked !== null && lines ? (lines[picked] ?? "") : "";
   const dayCount = Math.max(1, Math.min(366, Number(days) || 1));
@@ -125,12 +148,28 @@ export default function NewDeal() {
       setRepo(parsed);
       setBranch(b);
       setSha(head);
-      setLines(normalizeLines(body));
+      const fileLines = normalizeLines(body);
+      setLines(fileLines);
+      if (wantLine.current !== null) {
+        const want = normalize(wantLine.current);
+        const i = fileLines.findIndex((l) => l === want && l.trim() !== "");
+        if (i >= 0) setPicked(i);
+        else setLoadError("The line in this link is not in the file right now. Pick the line below.");
+        wantLine.current = null;
+      }
     } catch (e) {
       setLoadError(e instanceof GitHubError ? e.message : "Could not read that repo.");
     }
     setLoading(false);
   }
+
+  useEffect(() => {
+    if (!autoLoad || repoInput === "") return;
+    setAutoLoad(false);
+    void load();
+    // load reads the fields set by the link; run it once they are in place.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoLoad, repoInput]);
 
   async function run(label: string, fn: () => Promise<unknown>) {
     setBusy(label);
@@ -208,6 +247,19 @@ export default function NewDeal() {
         Pin a repo, a branch, a file and one exact line. From then on, each day that line is in
         the file pays the maintainer, and each day it is not refunds you.
       </p>
+
+      {fromLink ? (
+        <p className="notice good" style={{ marginTop: 16 }}>
+          Filled in from a maintainer&apos;s sponsor link. Check the line and the terms, then sign.
+        </p>
+      ) : null}
+
+      <div className="signin-row">
+        <span className="small">
+          {isConnected ? "Signed in. You sign once the steps below are filled in." : "You will need to sign in to pay, at step 4. You can do it now."}
+        </span>
+        <Wallet />
+      </div>
 
       {/* ---------------------------------------------------------- step 1 */}
       <section className="card" style={{ marginTop: 24 }}>
@@ -331,7 +383,9 @@ export default function NewDeal() {
             <>
               <p className="small">
                 {!isConnected
-                  ? "Signing needs a wallet. Sign in with email or Google and one is made for you, or use your own."
+                  ? PRIVY_APP_ID
+                    ? "Signing needs a wallet. Sign in with email or Google and one is made for you, or use your own."
+                    : "Signing needs a wallet on Base, such as Coinbase Wallet or MetaMask."
                   : "Your wallet is on another network."}
               </p>
               <Wallet />
@@ -402,7 +456,19 @@ export default function NewDeal() {
 
           {txError ? <p className="notice warn" style={{ marginTop: 12 }}>{txError}</p> : null}
         </section>
-      ) : null}
+      ) : (
+        <section className="card" style={{ marginTop: 18 }}>
+          <h3>4. Sign</h3>
+          <p className="small" style={{ marginBottom: 0 }}>
+            {lines === null
+              ? "Read the file in step 1 first."
+              : picked === null
+                ? "Click the line you are paying for in step 2."
+                : "Enter the maintainer's address, a price and a number of days in step 3."}{" "}
+            Then you approve the tokens and open the deal here.
+          </p>
+        </section>
+      )}
     </>
   );
 }

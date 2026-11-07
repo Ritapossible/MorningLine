@@ -35,6 +35,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <Link href="/#how" className="nav-link">
                   How it works
                 </Link>
+                <Link href="/maintainers" className="nav-link">
+                  For maintainers
+                </Link>
                 <Link href="/docs" className="nav-link">
                   Docs
                 </Link>

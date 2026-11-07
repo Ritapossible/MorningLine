@@ -1322,6 +1322,23 @@ a.day:hover {
   background: #4cc38a;
 }
 
+.signin-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.signin-row .small {
+  margin: 0;
+}
+
 /* ------------------------------------------------------------------- steps */
 
 .steps {

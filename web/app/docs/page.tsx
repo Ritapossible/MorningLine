@@ -166,6 +166,12 @@ export default function Docs() {
                 written.
               </li>
               <li>
+                On <Link href="/maintainers">For maintainers</Link>, make a sponsor link: it checks
+                the line is in your file, then gives you a link that opens the deal form with your
+                repo, line, address and price filled in. Send it to the sponsor. The same page lists
+                every deal paying your address.
+              </li>
+              <li>
                 Each day the line is there when the check runs, that day&apos;s USDC arrives in your
                 wallet. The checker pays the gas.
               </li>

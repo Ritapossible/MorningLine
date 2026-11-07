@@ -90,7 +90,7 @@ export default function Home() {
             <Link href="/new" className="pill primary">
               Open a deal <span aria-hidden="true">→</span>
             </Link>
-            <Link href="#maintainers" className="pill">
+            <Link href="/maintainers" className="pill">
               I'm a maintainer
             </Link>
           </div>
@@ -338,18 +338,23 @@ export default function Home() {
         </h2>
         <ol className="plain-steps">
           <li>
-            <b>Share an address on Base.</b> That is all the setup there is. No account, no fee, no
-            gas.
-          </li>
-          <li>
             <b>Add the sponsor's line to your README</b> on the branch you both agree on, exactly as
             written.
           </li>
           <li>
-            <b>Send the sponsor the deal link.</b> Each day the line is there, that day's USDC
-            arrives in your wallet.
+            <b>Make a sponsor link and send it.</b> It opens the deal with your repo, the line, your
+            address and your price filled in. The sponsor checks it and pays.
+          </li>
+          <li>
+            <b>Keep the line up.</b> Each day it is there, that day's USDC arrives in your wallet.
+            No account, no fee, no gas.
           </li>
         </ol>
+        <div className="hero-ctas" style={{ marginTop: 24 }}>
+          <Link href="/maintainers" className="pill">
+            Make a sponsor link <span aria-hidden="true">→</span>
+          </Link>
+        </div>
       </section>
 
       {/* ----------------------------------------------------------------- limits */}
