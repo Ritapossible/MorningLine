@@ -2,14 +2,12 @@
 
 **Per-day escrow for sponsor lines in GitHub READMEs, on Base.**
 
-Sponsored by the Morning Line demo: this line is paid only for the days it is here.
-
 A sponsor locks USDC for a number of days. Each day the sponsor line is in the repository's
 README, that day's USDC goes to the maintainer. Each day it is missing, that day's USDC goes back
 to the sponsor. Every result is recorded on chain with the commit it was read from, so anyone can
 check it.
 
-[Live app](https://morning-line-phi.vercel.app) · [Docs](https://morning-line-phi.vercel.app/docs) · [Security model](docs/SECURITY.md)
+[Live app](https://morning-line-phi.vercel.app) · [Live demo deal](https://morning-line-phi.vercel.app/deal/1) · [Docs](https://morning-line-phi.vercel.app/docs) · [Security model](docs/SECURITY.md)
 
 ---
 
@@ -29,25 +27,22 @@ check it.
 
 ## Why it is needed
 
-README sponsorships run on trust today:
+README sponsorships run on trust. Morning Line replaces the trust with a contract and a commit.
 
-- The sponsor pays a month up front and hopes the line stays up.
-- The maintainer sends an invoice and waits to be paid.
-- If the line comes down on day 9, nobody refunds days 9 to 30.
-- Neither side can show which days the line was really there.
+| | Today | With Morning Line |
+|---|---|---|
+| **Payment** | The sponsor pays a month up front and hopes the line stays up. | The money is locked before day one and released one day at a time. |
+| **Getting paid** | The maintainer sends an invoice and waits. | Each day the line is up pays the maintainer automatically. |
+| **Line removed** | If it comes down on day 9, nobody refunds days 9 to 30. | Every day it is gone goes back to the sponsor. |
+| **Proof** | Neither side can show which days the line was really there. | Every day names the commit it was read from, so anyone can check it. |
+| **Middleman** | Someone has to hold the money or chase it. | No one holds the money but the contract. |
 
-With Morning Line:
+### Why now
 
-- The money is locked before day one and released one day at a time.
-- A day the line is up pays the maintainer. A day it is gone goes back to the sponsor.
-- Every day names the commit it was read from, so anyone can check it.
-- No invoices, no chasing, and no one in the middle holding the money.
-
-**Why now.** Paying for one day at a time only works when moving a dollar costs almost nothing.
-Stablecoins on Base settle in seconds for a fraction of a cent, so a daily payout now costs less
-than the invoice it replaces. And GitHub is where developer tools find their users: as small teams
-and AI agents ship more of them, a line in a popular README is shelf space worth paying for, and
-worth proving.
+Paying for one day at a time only works when moving a dollar costs almost nothing. Stablecoins on
+Base settle in seconds for a fraction of a cent, so a daily payout now costs less than the invoice
+it replaces. And GitHub is where developer tools find their users: as small teams and AI agents
+ship more of them, a line in a popular README is shelf space worth paying for, and worth proving.
 
 ## How it works
 
