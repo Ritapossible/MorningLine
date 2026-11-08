@@ -2005,3 +2005,59 @@ button.danger {
     transition: none !important;
   }
 }
+
+/* ------------------------------------------------------------------ why now */
+
+.why-grid {
+  display: grid;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+@media (min-width: 760px) {
+  .why-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.why-card h3 {
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+
+.why-card ul {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.why-card li + li {
+  margin-top: 6px;
+}
+
+.why-card.good {
+  border-color: var(--dawn);
+  background: var(--dawn-wash);
+}
+
+.why-card.good ul {
+  color: var(--ink);
+}
+
+.why-now {
+  margin-top: 28px;
+  max-width: 44rem;
+}
+
+.why-now h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.why-now p {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.65;
+  color: var(--muted);
+}

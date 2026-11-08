@@ -7,10 +7,22 @@ import { chain, IS_DEMO } from "../lib/contracts";
 import { Logo } from "../components/Logo";
 import { PRIVY_APP_ID, SPONSOR_GAS } from "../lib/auth";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://morning-line-phi.vercel.app";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "Morning Line",
   description:
     "Sponsor a GitHub README and pay only for the days your line stays up. Each day is settled on Base against the file at a named commit.",
+  openGraph: {
+    title: "Morning Line: sponsor lines, paid by the day",
+    description:
+      "Per-day USDC escrow on Base for a sponsor line in a GitHub README. Line up, the day is paid. Line gone, it goes back.",
+    url: "/",
+    siteName: "Morning Line",
+    type: "website",
+  },
+  twitter: { card: "summary_large_image" },
   // Which sign-in and gas settings this build was made with. Public, and handy for checking a
   // deploy picked up its environment: NEXT_PUBLIC_ values are fixed at build time.
   other: {

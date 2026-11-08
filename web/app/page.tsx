@@ -115,6 +115,46 @@ export default function Home() {
       </section>
 
 
+      {/* ---------------------------------------------------------------- why now */}
+      <section className="block" id="why">
+        <p className="eyebrow">Why it is needed</p>
+        <h2 className="section-title">
+          README sponsorships run on trust.
+          <br />
+          <span className="soft">They do not have to.</span>
+        </h2>
+        <div className="why-grid">
+          <div className="card why-card">
+            <h3>Today</h3>
+            <ul>
+              <li>The sponsor pays a month up front and hopes the line stays up.</li>
+              <li>The maintainer sends an invoice and waits to be paid.</li>
+              <li>If the line comes down on day 9, nobody refunds days 9 to 30.</li>
+              <li>Neither side can show which days the line was really there.</li>
+            </ul>
+          </div>
+          <div className="card why-card good">
+            <h3>With Morning Line</h3>
+            <ul>
+              <li>The money is locked before day one and released one day at a time.</li>
+              <li>A day the line is up pays the maintainer. A day it is gone goes back.</li>
+              <li>Every day names the commit it was read from, so anyone can check it.</li>
+              <li>No invoices, no chasing, no one in the middle holding the money.</li>
+            </ul>
+          </div>
+        </div>
+        <div className="why-now">
+          <h3>Why now</h3>
+          <p>
+            Paying for one day at a time only works when moving a dollar costs almost nothing.
+            Stablecoins on Base settle in seconds for a fraction of a cent, so a daily payout now
+            costs less than the invoice it replaces. And GitHub is where developer tools find their
+            users: as small teams and AI agents ship more of them, a line in a popular README is
+            shelf space worth paying for, and worth proving.
+          </p>
+        </div>
+      </section>
+
       {/* -------------------------------------------------------------- live board */}
       <section className="block">
         <h2 className="section-title">
