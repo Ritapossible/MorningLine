@@ -2061,3 +2061,42 @@ button.danger {
   line-height: 1.65;
   color: var(--muted);
 }
+
+/* ---------------------------------------------------------------- where it works */
+
+.where-grid {
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 640px) {
+  .where-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (min-width: 960px) {
+  .where-grid {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+
+.where-card h3 {
+  margin: 0 0 6px;
+  font-size: 17px;
+}
+
+.where-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.where-card.note {
+  border-color: var(--dawn);
+  background: var(--dawn-wash);
+}
+
+.where-card.note p {
+  color: var(--ink);
+}

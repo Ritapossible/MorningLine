@@ -155,6 +155,46 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ------------------------------------------------------------- where it works */}
+      <section className="block" id="where">
+        <p className="eyebrow">Where it works</p>
+        <h2 className="section-title">
+          Any line developers read,
+          <br />
+          <span className="soft">in any public repository</span>
+        </h2>
+        <p className="section-lede">
+          A deal pins a repository, a branch, a file and one exact line. The README is the usual
+          place, but any text file on GitHub works the same way.
+        </p>
+        <div className="where-grid">
+          <div className="card where-card">
+            <h3>READMEs</h3>
+            <p>The front page of a library, CLI or framework: the first thing developers read.</p>
+          </div>
+          <div className="card where-card">
+            <h3>Docs in the repo</h3>
+            <p>A sponsor line on a getting-started or install page kept in the repository.</p>
+          </div>
+          <div className="card where-card">
+            <h3>Curated lists</h3>
+            <p>An entry in a list of tools or resources that developers browse to choose one.</p>
+          </div>
+          <div className="card where-card">
+            <h3>Changelogs</h3>
+            <p>A &ldquo;this release was supported by&rdquo; line in release notes.</p>
+          </div>
+          <div className="card where-card">
+            <h3>Templates</h3>
+            <p>The README of a starter kit that developers open when they begin a project.</p>
+          </div>
+          <div className="card where-card note">
+            <h3>The rule is the same everywhere</h3>
+            <p>A public repository, a text file and one exact line, checked every day.</p>
+          </div>
+        </div>
+      </section>
+
       {/* -------------------------------------------------------------- live board */}
       <section className="block">
         <h2 className="section-title">

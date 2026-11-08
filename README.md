@@ -14,6 +14,7 @@ check it.
 ## Contents
 
 - [Why it is needed](#why-it-is-needed)
+- [Where it works](#where-it-works)
 - [How it works](#how-it-works)
 - [Guarantees and limits](#guarantees-and-limits)
 - [Architecture](#architecture)
@@ -43,6 +44,22 @@ Paying for one day at a time only works when moving a dollar costs almost nothin
 Base settle in seconds for a fraction of a cent, so a daily payout now costs less than the invoice
 it replaces. And GitHub is where developer tools find their users: as small teams and AI agents
 ship more of them, a line in a popular README is shelf space worth paying for, and worth proving.
+
+## Where it works
+
+A deal pins a repository, a branch, a file and one exact line. The README is the usual place, but
+any text file in a public GitHub repository works the same way.
+
+| Placement | Example |
+|---|---|
+| **READMEs** | The front page of a library, CLI or framework: the first thing developers read. |
+| **Docs in the repo** | A sponsor line on a getting-started or install page kept in the repository. |
+| **Curated lists** | An entry in a list of tools or resources that developers browse to choose one. |
+| **Changelogs** | A "this release was supported by" line in release notes. |
+| **Templates** | The README of a starter kit that developers open when they begin a project. |
+
+The rule is the same everywhere: a public repository, a text file and one exact line, checked
+every day.
 
 ## How it works
 
