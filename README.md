@@ -15,6 +15,7 @@ check it.
 
 ## Contents
 
+- [Why it is needed](#why-it-is-needed)
 - [How it works](#how-it-works)
 - [Guarantees and limits](#guarantees-and-limits)
 - [Architecture](#architecture)
@@ -25,6 +26,28 @@ check it.
 - [Project status](#project-status)
 - [Security](#security)
 - [License](#license)
+
+## Why it is needed
+
+README sponsorships run on trust today:
+
+- The sponsor pays a month up front and hopes the line stays up.
+- The maintainer sends an invoice and waits to be paid.
+- If the line comes down on day 9, nobody refunds days 9 to 30.
+- Neither side can show which days the line was really there.
+
+With Morning Line:
+
+- The money is locked before day one and released one day at a time.
+- A day the line is up pays the maintainer. A day it is gone goes back to the sponsor.
+- Every day names the commit it was read from, so anyone can check it.
+- No invoices, no chasing, and no one in the middle holding the money.
+
+**Why now.** Paying for one day at a time only works when moving a dollar costs almost nothing.
+Stablecoins on Base settle in seconds for a fraction of a cent, so a daily payout now costs less
+than the invoice it replaces. And GitHub is where developer tools find their users: as small teams
+and AI agents ship more of them, a line in a popular README is shelf space worth paying for, and
+worth proving.
 
 ## How it works
 
